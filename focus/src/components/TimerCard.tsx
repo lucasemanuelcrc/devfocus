@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useFocusStats } from '@/hooks/useFocusStats';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -29,7 +29,7 @@ interface TimerCardProps {
 }
 
 export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardProps) {
-  // --- ESTADO (Core mantido) ---
+  // --- ESTADO ---
   const [mode, setMode] = useState<TimerMode>('focus');
   const [timeLeft, setTimeLeft] = useState(MODES.focus.minutes * 60);
   const [isRunning, setIsRunning] = useState(false);
@@ -39,7 +39,7 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
   // --- HOOK DE ESTATÍSTICAS ---
   const { registerSession } = useFocusStats();
 
-  // --- PERSISTÊNCIA (Core mantido) ---
+  // --- PERSISTÊNCIA ---
   useEffect(() => {
     const savedMode = localStorage.getItem('focus_timer_mode') as TimerMode;
     const savedTime = localStorage.getItem('focus_timer_time');
@@ -96,6 +96,55 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
     },
   }[mode];
 
+  // --- ACTIONS (useCallback para estabilidade nos atalhos) ---
+  const switchMode = useCallback((newMode: TimerMode) => {
+    setMode(newMode);
+    setTimeLeft(MODES[newMode].minutes * 60);
+    setIsRunning(false);
+  }, []);
+
+  const toggleTimer = useCallback(() => {
+    setIsRunning((prev) => !prev);
+  }, []);
+
+  const resetTimer = useCallback(() => {
+    setIsRunning(false);
+    setTimeLeft(MODES[mode].minutes * 60);
+    setQuote(QUOTES[Math.floor(Math.random() * QUOTES.length)]);
+  }, [mode]);
+
+  // --- ATALHOS DE TECLADO (NOVO) ---
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignora se estiver digitando em inputs (futuros)
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      switch (e.code) {
+        case 'Space':
+          // Se o foco já estiver num botão, deixa o navegador clicar nativamente
+          if (e.target instanceof HTMLButtonElement) return;
+          e.preventDefault(); // Previne scroll da página
+          toggleTimer();
+          break;
+        case 'KeyR':
+          resetTimer();
+          break;
+        case 'KeyM':
+          // Alterna: Se Foco -> Descanso Curto. Se Descanso -> Foco.
+          const nextKey = mode === 'focus' ? 'shortBreak' : 'focus';
+          switchMode(nextKey);
+          break;
+        case 'KeyZ':
+          if (onToggleZen) onToggleZen();
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mode, toggleTimer, resetTimer, switchMode, onToggleZen]);
+
+  // --- EFEITO DO TIMER ---
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isRunning && timeLeft > 0) {
@@ -117,20 +166,6 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
     document.title = `${minutes}:${seconds < 10 ? '0' : ''}${seconds} - FOCUS`;
   }, [timeLeft]);
 
-  const switchMode = (newMode: TimerMode) => {
-    setMode(newMode);
-    setTimeLeft(MODES[newMode].minutes * 60);
-    setIsRunning(false);
-  };
-
-  const toggleTimer = () => setIsRunning(!isRunning);
-
-  const resetTimer = () => {
-    setIsRunning(false);
-    setTimeLeft(MODES[mode].minutes * 60);
-    setQuote(QUOTES[Math.floor(Math.random() * QUOTES.length)]);
-  };
-
   const totalTime = MODES[mode].minutes * 60;
   const circumference = 283;
   const strokeDashoffset = circumference - (timeLeft / totalTime) * circumference;
@@ -142,9 +177,6 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
   };
 
   return (
-    // ALTERAÇÃO AQUI: Ajuste fino na prop 'transition'
-    // stiffness: 100 (menos rigidez, mais lento)
-    // damping: 25 (mais amortecimento, sem 'quicar')
     <motion.div 
       layout
       transition={{ type: "spring", stiffness: 100, damping: 25 }}
@@ -166,7 +198,7 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
         <button
           onClick={onToggleZen}
           className="absolute top-6 right-6 p-2 rounded-full text-slate-600 hover:text-slate-300 hover:bg-white/5 transition-all duration-300 z-20 group/zen"
-          title={isZenMode ? "Sair do Modo Zen" : "Modo Zen"}
+          title="Modo Zen (Atalho: Z)"
         >
           {isZenMode ? (
             <Minimize2 className="w-5 h-5 opacity-50 group-hover/zen:opacity-100" />
@@ -197,13 +229,14 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
                   ? `${theme.bg} text-white shadow-lg scale-100`
                   : 'text-slate-500 hover:text-slate-300 hover:bg-white/5 scale-95'}
               `}
+              title={m === 'focus' ? 'Atalho: M' : ''}
             >
               {MODES[m].label}
             </button>
           ))}
         </div>
 
-        {/* Feedback Visual de Sessão */}
+        {/* Feedback Visual */}
         <div className="flex flex-col items-center gap-1">
           <p className="text-[10px] font-bold tracking-wider uppercase text-slate-200 drop-shadow-sm">
             Sessão Atual: <span className={`transition-colors duration-300 ${theme.text}`}>{MODES[mode].label} · {MODES[mode].minutes} min</span>
@@ -276,7 +309,7 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
             ${theme.bg}
             ring-4 ring-slate-950 ring-offset-2 ring-offset-slate-900/50
           `}
-          title={isRunning ? "Pausar" : "Iniciar"}
+          title={isRunning ? "Pausar (Espaço)" : "Iniciar (Espaço)"}
         >
           {isRunning ? (
             <svg className="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
@@ -288,6 +321,7 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
         <button
           onClick={resetTimer}
           className="text-[10px] font-bold text-slate-500 hover:text-slate-300 uppercase tracking-widest transition-colors"
+          title="Atalho: R"
         >
           Reiniciar
         </button>
