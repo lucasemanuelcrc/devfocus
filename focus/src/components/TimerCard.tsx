@@ -1,31 +1,29 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 
 // Tipos e Configurações
 type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
 
 const MODES = {
-  focus: { label: 'Foco Profundo', minutes: 25, color: 'cyan' },
-  shortBreak: { label: 'Pausa Curta', minutes: 5, color: 'emerald' },
-  longBreak: { label: 'Descanso Longo', minutes: 15, color: 'violet' },
+  focus: { label: 'Foco', minutes: 25, color: 'cyan' },
+  shortBreak: { label: 'Curta', minutes: 5, color: 'emerald' },
+  longBreak: { label: 'Longa', minutes: 15, color: 'violet' },
 };
 
 export default function TimerCard() {
-  // --- ESTADO (Lógica Funcional) ---
+  // --- ESTADO ---
   const [mode, setMode] = useState<TimerMode>('focus');
   const [timeLeft, setTimeLeft] = useState(MODES.focus.minutes * 60);
   const [isRunning, setIsRunning] = useState(false);
 
-  // --- MAPA DE CORES (Design System) ---
-  // Mapeamos as cores baseadas no modo atual para as classes do Tailwind
+  // --- MAPA DE CORES ---
   const theme = {
     focus: {
       text: 'text-cyan-400',
       bg: 'bg-cyan-500',
       ring: 'text-cyan-500',
       glow: 'shadow-cyan-500/40',
-      border: 'border-cyan-500/20',
       gradient: 'from-cyan-900/20',
     },
     shortBreak: {
@@ -33,7 +31,6 @@ export default function TimerCard() {
       bg: 'bg-emerald-500',
       ring: 'text-emerald-500',
       glow: 'shadow-emerald-500/40',
-      border: 'border-emerald-500/20',
       gradient: 'from-emerald-900/20',
     },
     longBreak: {
@@ -41,14 +38,11 @@ export default function TimerCard() {
       bg: 'bg-violet-600',
       ring: 'text-violet-600',
       glow: 'shadow-violet-500/40',
-      border: 'border-violet-500/20',
       gradient: 'from-violet-900/20',
     },
   }[mode];
 
-  // --- EFEITOS (Timer) ---
-
-  // Timer tick
+  // --- EFEITOS ---
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isRunning && timeLeft > 0) {
@@ -57,12 +51,10 @@ export default function TimerCard() {
       }, 1000);
     } else if (timeLeft === 0) {
       setIsRunning(false);
-      // Aqui você poderia tocar um som de alarme
     }
     return () => clearInterval(interval);
   }, [isRunning, timeLeft]);
 
-  // Atualizar título da aba do navegador
   useEffect(() => {
     const minutes = Math.floor(timeLeft / 60);
     const seconds = timeLeft % 60;
@@ -70,7 +62,6 @@ export default function TimerCard() {
   }, [timeLeft]);
 
   // --- HANDLERS ---
-
   const switchMode = (newMode: TimerMode) => {
     setMode(newMode);
     setTimeLeft(MODES[newMode].minutes * 60);
@@ -84,11 +75,8 @@ export default function TimerCard() {
     setTimeLeft(MODES[mode].minutes * 60);
   };
 
-  // Cálculos visuais
+  // Cálculos visuais SVG
   const totalTime = MODES[mode].minutes * 60;
-  const progress = ((totalTime - timeLeft) / totalTime) * 100;
-  // Circunferência do círculo (2 * PI * r). Para r=48%, aprox 301.
-  // Vamos usar Dasharray fixo e calcular o offset.
   const circumference = 283;
   const strokeDashoffset = circumference - (timeLeft / totalTime) * circumference;
 
@@ -101,68 +89,64 @@ export default function TimerCard() {
   return (
     // CARD PRINCIPAL
     <div className={`
-      relative h-full flex flex-col justify-between items-center py-8 px-8 
-      rounded-[32px] 
+      relative h-full flex flex-col justify-between items-center py-8 px-6 sm:px-10
+      rounded-[40px]
       bg-slate-950 
-      border border-slate-800/50 
-      shadow-2xl shadow-black/40
+      border border-slate-800/60
+      shadow-2xl shadow-black/50
       overflow-hidden
       group
     `}>
 
-      {/* BACKGROUND FX Dinâmico */}
-      <div className={`absolute top-0 left-0 w-full h-2/3 bg-gradient-to-b ${theme.gradient} to-transparent opacity-30 pointer-events-none transition-colors duration-1000`} />
+      {/* BACKGROUND FX */}
+      <div className={`absolute top-0 left-0 w-full h-2/3 bg-gradient-to-b ${theme.gradient} to-transparent opacity-25 pointer-events-none transition-all duration-1000`} />
 
-      {/* HEADER: Seletor de Modos */}
-      <div className="z-10 w-full flex flex-col items-center gap-4">
-        <h2 className="text-[10px] font-bold tracking-[0.3em] text-slate-500 uppercase">
-          Focus Product
-        </h2>
+      {/* HEADER */}
+      <div className="z-10 w-full flex flex-col items-center gap-6 pt-2">
+        <div className="flex flex-col items-center gap-2">
+          <h1 className="text-sm sm:text-base font-extrabold tracking-[0.5em] text-transparent bg-clip-text bg-gradient-to-br from-slate-200 to-slate-500 uppercase select-none pl-2">
+            FOCUS
+          </h1>
+          <div className={`w-8 h-0.5 rounded-full transition-colors duration-700 ${isRunning ? theme.bg : 'bg-slate-800'}`} />
+        </div>
 
-        {/* Menu de Modos (Restaurando as opções anteriores) */}
-        <div className="flex gap-2 p-1 bg-slate-900/80 rounded-full border border-slate-800/50 backdrop-blur-sm">
+        <div className="flex p-1.5 bg-slate-900/60 rounded-2xl border border-white/5 backdrop-blur-md shadow-inner">
           {(Object.keys(MODES) as TimerMode[]).map((m) => (
             <button
               key={m}
               onClick={() => switchMode(m)}
               className={`
-                px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-300
+                px-5 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wide transition-all duration-300
                 ${mode === m
-                  ? `${theme.bg} text-white shadow-lg`
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}
+                  ? `${theme.bg} text-white shadow-lg scale-100`
+                  : 'text-slate-500 hover:text-slate-300 hover:bg-white/5 scale-95'}
               `}
             >
-              {MODES[m].label.split(' ')[0]} {/* Exibe apenas a primeira palavra para economizar espaço se necessário, ou remova o split */}
+              {MODES[m].label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* CENTER: O Timer Visual */}
-      <div className="flex-1 flex items-center justify-center w-full relative my-4">
-
-        {/* Container do Círculo com Animação de "Respiração" apenas quando rodando */}
+      {/* CENTER: Timer */}
+      <div className="flex-1 flex items-center justify-center w-full relative">
         <div className={`
-          relative w-72 h-72 sm:w-80 sm:h-80 flex items-center justify-center rounded-full 
+          relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center rounded-full 
           transition-all duration-1000
           ${isRunning ? `animate-breathing-glow ${theme.glow}` : ''}
         `}>
-
-          {/* SVG Ring */}
           <svg className="w-full h-full absolute transform -rotate-90 drop-shadow-2xl" viewBox="0 0 100 100">
-            {/* Trilha de fundo */}
             <circle
               cx="50" cy="50" r="45"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="1.5"
               fill="transparent"
-              className="text-slate-800/80"
+              className="text-slate-800/60"
             />
-            {/* Progresso Dinâmico */}
             <circle
               cx="50" cy="50" r="45"
               stroke="currentColor"
-              strokeWidth="3"
+              strokeWidth="2.5"
               fill="transparent"
               strokeLinecap="round"
               strokeDasharray={circumference}
@@ -171,48 +155,46 @@ export default function TimerCard() {
             />
           </svg>
 
-          {/* Display Digital */}
-          <div className="z-10 flex flex-col items-center justify-center">
-            <h1 className="text-7xl sm:text-8xl font-light font-sans tracking-tighter text-white tabular-nums select-none drop-shadow-lg">
+          <div className="z-10 flex flex-col items-center justify-center transform translate-y-2">
+            <span className="text-7xl sm:text-8xl font-medium tracking-tighter text-white tabular-nums select-none drop-shadow-xl font-sans">
               {formatTime(timeLeft)}
-            </h1>
-            <p className={`text-sm font-medium tracking-widest uppercase mt-4 transition-colors duration-500 ${theme.text}`}>
-              {isRunning ? 'Em Andamento' : 'Pausado'}
-            </p>
+            </span>
+            <span className={`text-[10px] font-bold tracking-[0.2em] uppercase mt-2 opacity-80 transition-colors duration-500 ${theme.text}`}>
+              {isRunning ? 'Em fluxo' : 'Pausado'}
+            </span>
           </div>
         </div>
       </div>
 
-      {/* FOOTER: Controles Principais */}
-      <div className="z-10 w-full flex flex-col items-center gap-3 pb-2">
+      {/* FOOTER: Controles */}
+      <div className="z-10 w-full flex flex-col items-center justify-center gap-4 pb-4">
         <button
           onClick={toggleTimer}
           className={`
-            w-48 py-4 rounded-2xl 
-            text-lg font-bold tracking-wide text-white 
-            shadow-lg hover:shadow-xl hover:-translate-y-1 active:translate-y-0 active:scale-95
+            w-20 h-20 rounded-full 
+            flex items-center justify-center
+            text-white shadow-2xl 
             transition-all duration-300 ease-out
-            flex items-center justify-center gap-3
+            hover:scale-110 active:scale-95
             ${theme.bg}
-            ring-1 ring-white/10 ring-inset
+            ring-4 ring-slate-950 ring-offset-2 ring-offset-slate-900/50
           `}
+          title={isRunning ? "Pausar" : "Iniciar"}
         >
           {isRunning ? (
-            // Ícone de Pause
-            <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+            // Ícone PAUSE (Geometricamente centralizado)
+            <svg className="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
           ) : (
-            // Ícone de Play
-            <svg className="w-6 h-6 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+            // Ícone PLAY (Ajustado com ml-1 para compensar o peso visual)
+            <svg className="w-8 h-8 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
           )}
-          <span>{isRunning ? 'PAUSAR' : 'INICIAR'}</span>
         </button>
 
-        {/* Botão Reset Discreto */}
         <button
           onClick={resetTimer}
-          className="text-xs font-semibold text-slate-500 hover:text-slate-300 uppercase tracking-wider transition-colors py-2"
+          className="text-[10px] font-bold text-slate-600 hover:text-slate-400 uppercase tracking-widest transition-colors"
         >
-          Resetar Timer
+          Reiniciar
         </button>
       </div>
 
