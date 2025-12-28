@@ -4,20 +4,21 @@ import SoundsCard from '@/components/SoundsCard';
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-neutral-950 p-6 md:p-8 lg:p-12">
-      <div className="w-full max-w-[1600px] h-full lg:h-[800px] grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+    <main className="min-h-screen bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black text-slate-200 p-6 md:p-10 lg:px-12 lg:py-10 font-sans selection:bg-cyan-500/30">
 
-        <section className="lg:col-span-8 h-[500px] lg:h-full">
+      <div className="w-full max-w-[1600px] h-full lg:h-[800px] grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch mx-auto">
+
+        <section className="lg:col-span-8 h-[500px] lg:h-full relative z-10">
           <TimerCard />
         </section>
 
-        <aside className="lg:col-span-4 flex flex-col gap-6 h-full min-h-0">
+        <aside className="lg:col-span-4 flex flex-col gap-8 h-full min-h-0 relative z-10">
 
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 shadow-xl shadow-black/20 rounded-3xl">
             <GoalsCard />
           </div>
 
-          <div className="shrink-0">
+          <div className="shrink-0 shadow-xl shadow-black/20 rounded-3xl">
             <SoundsCard />
           </div>
 

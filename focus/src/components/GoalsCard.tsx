@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, KeyboardEvent, useRef } from 'react';
 import { useGoals } from '@/hooks/useGoals';
 
@@ -16,7 +15,7 @@ export default function GoalsCard() {
       setError(null);
       if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
     } else {
-      showError('A meta não pode estar vazia.');
+      showError('Digite uma meta válida');
     }
   };
 
@@ -36,80 +35,78 @@ export default function GoalsCard() {
   };
 
   return (
-    // ESTRUTURA FLEX VERTICAL
-    // h-full: Preenche o wrapper (definido no page.tsx)
-    // overflow-hidden: Garante que nada vaze das bordas arredondadas
-    <div className="flex flex-col h-full bg-neutral-900 rounded-2xl border border-neutral-800 shadow-sm overflow-hidden">
+    // CARD: Fundo Slate Escuro com borda fina
+    <div className="flex flex-col h-full bg-slate-900/50 backdrop-blur-md rounded-3xl border border-white/10 overflow-hidden">
 
-      {/* ÁREA SUPERIOR (FIXA) 
-          shrink-0: Garante que o input nunca diminua de tamanho, mesmo com pouco espaço.
-      */}
-      <div className="shrink-0 p-6 pb-2 bg-neutral-900 z-10 border-b border-transparent">
-        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          Metas da Sessão
-          <span className="text-xs font-normal text-neutral-500 bg-neutral-800 px-2 py-0.5 rounded-full">
-            {goals.filter(g => g.completed).length}/{goals.length}
+      {/* HEADER: Fundo levemente diferenciado para separar áreas */}
+      <div className="shrink-0 p-6 bg-black/20 border-b border-white/5">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-sm font-bold text-slate-100 uppercase tracking-widest">
+            Metas
+          </h2>
+          <span className="text-[10px] font-bold text-cyan-400 bg-cyan-950/30 px-2 py-1 rounded border border-cyan-900/50">
+            {goals.filter(g => g.completed).length} / {goals.length}
           </span>
-        </h2>
+        </div>
 
         <div className="flex gap-2">
-          <div className="relative flex-1">
+          <div className="relative flex-1 group">
             <input
               type="text"
               value={inputValue}
               onChange={(e) => handleChange(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Nova meta..."
-              className={`w-full bg-neutral-950 border text-neutral-200 text-sm rounded-lg pl-4 pr-4 py-3 focus:outline-none transition-all placeholder:text-neutral-600
+              placeholder="Adicionar nova tarefa..."
+              className={`w-full bg-slate-950/50 text-slate-200 text-sm rounded-xl pl-4 pr-12 py-3.5 focus:outline-none transition-all placeholder:text-slate-600
                 ${error
-                  ? 'border-red-500/50 focus:border-red-500'
-                  : 'border-neutral-800 focus:border-indigo-500/50'
+                  ? 'border border-red-500/30 focus:border-red-500/50'
+                  : 'border border-white/5 focus:border-cyan-500/30 group-hover:border-white/10'
                 }`}
             />
+            <button
+              onClick={handleAddGoal}
+              className="absolute right-1.5 top-1.5 bottom-1.5 px-3 bg-slate-800 hover:bg-cyan-600 hover:text-white text-slate-400 rounded-lg text-xs font-bold transition-all uppercase tracking-wide"
+            >
+              Add
+            </button>
           </div>
-          <button
-            onClick={handleAddGoal}
-            className="px-4 bg-neutral-800 hover:bg-indigo-600 hover:text-white text-neutral-400 rounded-lg text-sm font-medium transition-colors min-w-[80px]"
-          >
-            Adicionar
-          </button>
         </div>
 
-        <div className="h-6 mt-1 flex items-center">
-          {error && <span className="text-xs text-red-400 font-medium animate-pulse">⚠️ {error}</span>}
+        <div className="h-4 mt-1">
+          {error && <span className="text-[10px] text-red-400 font-medium animate-pulse tracking-wide">{error}</span>}
         </div>
       </div>
 
-      {/* ÁREA DE LISTA (ROLÁVEL)
-          flex-1: Ocupa todo o espaço restante do card.
-          overflow-y-auto: Cria a barra de rolagem apenas aqui.
-          min-h-0: Reforço para garantir o cálculo correto do flexbox.
-      */}
-      <div className="flex-1 overflow-y-auto min-h-0 px-4 pb-4 space-y-1 custom-scrollbar">
+      {/* LISTA */}
+      <div className="flex-1 overflow-y-auto min-h-0 px-4 py-4 space-y-2 custom-scrollbar">
         {goals.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center p-4 border-2 border-dashed border-neutral-800/50 rounded-xl opacity-60">
-            <span className="text-2xl mb-2">🚀</span>
-            <p className="text-sm text-neutral-400">Nenhuma meta definida</p>
+          <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
+            <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-3">
+              <span className="text-xl">✨</span>
+            </div>
+            <p className="text-xs text-slate-400 font-medium uppercase tracking-wide">Lista vazia</p>
           </div>
         ) : (
-          <ul className="space-y-2 py-1">
+          <ul className="space-y-2">
             {goals.map((goal) => (
               <li
                 key={goal.id}
-                className="group flex items-center gap-3 p-3 rounded-xl bg-neutral-800/20 hover:bg-neutral-800/50 border border-transparent hover:border-neutral-700/50 transition-all animate-fade-in"
+                className="group flex items-center gap-3 p-3.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-transparent hover:border-white/5 transition-all animate-fade-in"
               >
                 <button
                   onClick={() => toggleGoal(goal.id)}
-                  className={`w-5 h-5 rounded flex items-center justify-center border transition-all shrink-0 ${goal.completed ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-neutral-600 hover:border-indigo-400'
+                  className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all shrink-0 ${goal.completed
+                      ? 'bg-cyan-600 border-cyan-600 text-white shadow-lg shadow-cyan-900/50'
+                      : 'border-slate-600 bg-transparent hover:border-cyan-400'
                     }`}
                 >
-                  {goal.completed && <span>✓</span>}
+                  {goal.completed && <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg>}
                 </button>
-                <span className={`flex-1 text-sm break-words ${goal.completed ? 'text-neutral-500 line-through' : 'text-neutral-200'}`}>
+                <span className={`flex-1 text-sm font-medium transition-all ${goal.completed ? 'text-slate-600 line-through decoration-slate-700' : 'text-slate-300'}`}>
                   {goal.text}
                 </span>
-                <button onClick={() => removeGoal(goal.id)} className="opacity-0 group-hover:opacity-100 text-neutral-500 hover:text-red-400 px-2">
-                  ×
+                <button onClick={() => removeGoal(goal.id)} className="opacity-0 group-hover:opacity-100 text-slate-600 hover:text-red-400 transition-colors px-2">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </li>
             ))}
