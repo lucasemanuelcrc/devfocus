@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 // Tipos e Configurações
 type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
 
-// ALTERAÇÃO: Renomeação dos rótulos para maior clareza semântica
 const MODES = {
   focus: { label: 'Deep Focus', minutes: 25, color: 'cyan' },
   shortBreak: { label: 'Descanso Curto', minutes: 5, color: 'emerald' },
@@ -13,12 +12,38 @@ const MODES = {
 };
 
 export default function TimerCard() {
-  // --- ESTADO (INTOCADO) ---
+  // --- ESTADO ---
   const [mode, setMode] = useState<TimerMode>('focus');
   const [timeLeft, setTimeLeft] = useState(MODES.focus.minutes * 60);
   const [isRunning, setIsRunning] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  // --- MAPA DE CORES (INTOCADO) ---
+  // --- PERSISTÊNCIA (NOVO) ---
+  useEffect(() => {
+    // Carregar
+    const savedMode = localStorage.getItem('focus_timer_mode') as TimerMode;
+    const savedTime = localStorage.getItem('focus_timer_time');
+
+    if (savedMode && MODES[savedMode]) {
+      setMode(savedMode);
+    }
+    if (savedTime) {
+      const parsedTime = parseInt(savedTime, 10);
+      if (!isNaN(parsedTime)) setTimeLeft(parsedTime);
+    }
+    setIsLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    // Salvar
+    if (isLoaded) {
+      localStorage.setItem('focus_timer_mode', mode);
+      localStorage.setItem('focus_timer_time', timeLeft.toString());
+      // Nota: Não salvamos 'isRunning' para evitar que o timer inicie sozinho no refresh
+    }
+  }, [mode, timeLeft, isLoaded]);
+
+  // --- MAPA DE CORES ---
   const theme = {
     focus: {
       text: 'text-cyan-400',
@@ -43,7 +68,7 @@ export default function TimerCard() {
     },
   }[mode];
 
-  // --- EFEITOS (INTOCADO) ---
+  // --- EFEITOS ---
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isRunning && timeLeft > 0) {
@@ -62,7 +87,7 @@ export default function TimerCard() {
     document.title = `${minutes}:${seconds < 10 ? '0' : ''}${seconds} - FOCUS`;
   }, [timeLeft]);
 
-  // --- HANDLERS (INTOCADO) ---
+  // --- HANDLERS ---
   const switchMode = (newMode: TimerMode) => {
     setMode(newMode);
     setTimeLeft(MODES[newMode].minutes * 60);
@@ -105,7 +130,6 @@ export default function TimerCard() {
       {/* HEADER */}
       <div className="z-10 w-full flex flex-col items-center gap-6 pt-2">
         <div className="flex flex-col items-center gap-3">
-          {/* ALTERAÇÃO: Aumento significativo da tipografia para destaque visual (text-3xl sm:text-4xl) */}
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-[0.3em] text-transparent bg-clip-text bg-gradient-to-br from-slate-200 to-slate-500 uppercase select-none pl-2 transition-all duration-500">
             FOCUS
           </h1>
@@ -117,8 +141,6 @@ export default function TimerCard() {
             <button
               key={m}
               onClick={() => switchMode(m)}
-              // ALTERAÇÃO: Adicionado whitespace-nowrap para evitar quebra de linha nos textos longos
-              // Ajustado px-4 para equilibrar o tamanho com os novos rótulos
               className={`
                 px-4 py-2 rounded-xl text-[10px] sm:text-[11px] font-bold uppercase tracking-wide transition-all duration-300 whitespace-nowrap
                 ${mode === m
@@ -186,10 +208,8 @@ export default function TimerCard() {
           title={isRunning ? "Pausar" : "Iniciar"}
         >
           {isRunning ? (
-            // Ícone PAUSE
             <svg className="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
           ) : (
-            // Ícone PLAY
             <svg className="w-8 h-8 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
           )}
         </button>
@@ -201,7 +221,6 @@ export default function TimerCard() {
           Reiniciar
         </button>
       </div>
-
     </div>
   );
 }

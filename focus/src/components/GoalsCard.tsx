@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
-// Interface para as metas (pode mover para types.ts depois)
+// Interface para as metas
 interface Goal {
   id: string;
   text: string;
@@ -14,9 +14,31 @@ export default function GoalsCard() {
   const { colors } = useThemeColors();
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Estado local para gerenciar as metas
+  // Estado local
   const [goals, setGoals] = useState<Goal[]>([]);
   const [inputValue, setInputValue] = useState('');
+  const [isLoaded, setIsLoaded] = useState(false); // Flag de controle
+
+  // --- PERSISTÊNCIA (NOVO) ---
+  // 1. Carregar dados ao montar
+  useEffect(() => {
+    const savedGoals = localStorage.getItem('focus_goals');
+    if (savedGoals) {
+      try {
+        setGoals(JSON.parse(savedGoals));
+      } catch (error) {
+        console.error('Erro ao carregar metas:', error);
+      }
+    }
+    setIsLoaded(true); // Marca como carregado para liberar o salvamento
+  }, []);
+
+  // 2. Salvar dados quando 'goals' mudar (apenas se já tiver carregado)
+  useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem('focus_goals', JSON.stringify(goals));
+    }
+  }, [goals, isLoaded]);
 
   // Auto-scroll para o fim da lista ao adicionar item
   useEffect(() => {
@@ -25,7 +47,7 @@ export default function GoalsCard() {
     }
   }, [goals]);
 
-  // Handlers (Lógica de Negócio)
+  // Handlers (Lógica de Negócio Mantida)
   const addGoal = (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!inputValue.trim()) return;
@@ -55,11 +77,11 @@ export default function GoalsCard() {
   const completedGoals = goals.filter(g => g.completed).length;
   const progress = totalGoals === 0 ? 0 : (completedGoals / totalGoals) * 100;
 
+  // Renderização (UI Mantida idêntica)
   return (
-    // CARD PRINCIPAL: Estética "Navy Premium" consistente com TimerCard
     <div className="h-full flex flex-col bg-slate-950 border border-slate-800/50 rounded-[32px] shadow-xl shadow-black/20 overflow-hidden relative">
 
-      {/* HEADER: Título e Progresso */}
+      {/* HEADER */}
       <div className="p-6 pb-2 shrink-0 z-10 bg-slate-950/95 backdrop-blur-sm">
         <div className="flex justify-between items-end mb-3">
           <h2 className={`text-xs font-bold tracking-[0.2em] uppercase transition-colors duration-500 ${colors.accent}`}>
@@ -69,7 +91,6 @@ export default function GoalsCard() {
             {completedGoals}/{totalGoals}
           </span>
         </div>
-
         {/* Barra de Progresso */}
         <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
           <div
@@ -79,14 +100,12 @@ export default function GoalsCard() {
         </div>
       </div>
 
-      {/* LISTA: Scrollável e Limpa */}
+      {/* LISTA */}
       <div
         ref={scrollRef}
-        // Aplicação da nova scrollbar elegante do Projeto FOCUS
         className="flex-1 overflow-y-auto px-4 py-2 space-y-2 scrollbar-focus"
       >
         {goals.length === 0 ? (
-          // Empty State
           <div className="h-full flex flex-col items-center justify-center text-slate-600 space-y-2 opacity-50">
             <svg className="w-8 h-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -94,13 +113,11 @@ export default function GoalsCard() {
             <p className="text-xs font-medium">Nenhuma meta definida</p>
           </div>
         ) : (
-          // Lista de Items
           goals.map((goal) => (
             <div
               key={goal.id}
               className="group flex items-center gap-3 p-3 rounded-xl bg-slate-900/50 border border-transparent hover:border-slate-800 hover:bg-slate-900 transition-all duration-200"
             >
-              {/* Checkbox Customizado */}
               <button
                 onClick={() => toggleGoal(goal.id)}
                 className={`
@@ -113,7 +130,6 @@ export default function GoalsCard() {
                 <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20"><path d="M0 11l2-2 5 5L18 3l2 2L7 18z" /></svg>
               </button>
 
-              {/* Texto da Meta */}
               <span
                 className={`flex-1 text-sm font-medium truncate transition-all duration-300 ${goal.completed ? 'text-slate-600 line-through' : 'text-slate-200'
                   }`}
@@ -121,7 +137,6 @@ export default function GoalsCard() {
                 {goal.text}
               </span>
 
-              {/* Botão de Remover (Aparece no Hover) */}
               <button
                 onClick={() => removeGoal(goal.id)}
                 className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all duration-200"
@@ -134,7 +149,7 @@ export default function GoalsCard() {
         )}
       </div>
 
-      {/* FOOTER: Input de Nova Meta */}
+      {/* FOOTER */}
       <div className="p-4 pt-2 bg-slate-950/95 backdrop-blur-sm z-10 border-t border-slate-900">
         <form onSubmit={addGoal} className="relative flex items-center">
           <input
@@ -158,7 +173,6 @@ export default function GoalsCard() {
           </button>
         </form>
       </div>
-
     </div>
   );
 }

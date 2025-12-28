@@ -1,9 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
-// Tipagem inline mantida
 interface SoundTrack {
   id: string;
   title: string;
@@ -17,11 +16,27 @@ const PLAYLISTS: SoundTrack[] = [
 ];
 
 export default function SoundsCard() {
-  const [currentTrack, setCurrentTrack] = useState<SoundTrack>(PLAYLISTS[0]);
   const { colors } = useThemeColors();
+  const [currentTrack, setCurrentTrack] = useState<SoundTrack>(PLAYLISTS[0]);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // --- PERSISTÊNCIA ---
+  useEffect(() => {
+    const savedTrackId = localStorage.getItem('focus_sound_track_id');
+    if (savedTrackId) {
+      const foundTrack = PLAYLISTS.find(t => t.id === savedTrackId);
+      if (foundTrack) setCurrentTrack(foundTrack);
+    }
+    setIsLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem('focus_sound_track_id', currentTrack.id);
+    }
+  }, [currentTrack, isLoaded]);
 
   return (
-    // CARD PRINCIPAL
     <div className="h-full flex flex-col bg-slate-950 border border-slate-800/50 rounded-[32px] shadow-xl shadow-black/20 overflow-hidden relative p-6">
 
       {/* HEADER */}
@@ -30,7 +45,7 @@ export default function SoundsCard() {
           Focus Music
         </h2>
 
-        {/* Indicador de Status "Live" */}
+        {/* Indicador de Status */}
         <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800/50">
           <span className={`relative flex h-2 w-2`}>
             <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${colors.buttonBg}`}></span>
@@ -44,13 +59,9 @@ export default function SoundsCard() {
 
       {/* PLAYER WRAPPER */}
       <div className="w-full relative group mb-5 shadow-2xl shadow-black/50 rounded-2xl overflow-hidden border border-slate-800 bg-slate-900">
-
-        {/* Aspect Ratio Container */}
         <div className="aspect-video w-full">
           <iframe
             src={`${currentTrack.url}?autoplay=0&controls=0&rel=0&modestbranding=1`}
-            // ALTERAÇÃO AQUI: Removido 'grayscale', 'opacity-80' e os efeitos de hover.
-            // Agora o vídeo fica sempre com cor total (opacity-100) e sem filtro cinza.
             className="w-full h-full opacity-100"
             allow="autoplay; encrypted-media"
             title="Audio Player"
@@ -59,7 +70,7 @@ export default function SoundsCard() {
         </div>
       </div>
 
-      {/* CONTROLS: Botões estilo "Chips" */}
+      {/* CONTROLS */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
         {PLAYLISTS.map((track) => {
           const isActive = currentTrack.id === track.id;
@@ -68,12 +79,12 @@ export default function SoundsCard() {
               key={track.id}
               onClick={() => setCurrentTrack(track)}
               className={`
-                    flex-shrink-0 px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 border
-                    ${isActive
+                flex-shrink-0 px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 border
+                ${isActive
                   ? `bg-slate-800 text-white ${colors.accent.replace('text', 'border')}`
                   : 'bg-transparent text-slate-500 border-slate-800 hover:bg-slate-900 hover:text-slate-300 hover:border-slate-700'
                 }
-                    `}
+              `}
             >
               {track.title.split(' ')[0]}
             </button>
