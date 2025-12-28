@@ -32,7 +32,7 @@ export default function TimerCard() {
   // --- ESTADO VISUAL ---
   const [quote, setQuote] = useState(QUOTES[0]);
 
-  // --- HOOK DE ESTATÍSTICAS (NOVO) ---
+  // --- HOOK DE ESTATÍSTICAS ---
   const { registerSession } = useFocusStats();
 
   // --- PERSISTÊNCIA (Core mantido) ---
@@ -94,7 +94,7 @@ export default function TimerCard() {
     },
   }[mode];
 
-  // --- EFEITOS DE TIMER (ATUALIZADO) ---
+  // --- EFEITOS DE TIMER (REVERTIDO PARA O PADRÃO) ---
   useEffect(() => {
     let interval: NodeJS.Timeout;
     
@@ -108,10 +108,10 @@ export default function TimerCard() {
 
       // Só registra estatística se for uma sessão de Foco
       if (mode === 'focus') {
-        registerSession();
+        registerSession(); // <--- Volta a ser chamado sem argumentos
       }
       
-      // Aqui você pode adicionar lógica de som futuramente (playAlarm)
+      // Lógica de som futura...
     }
     
     return () => clearInterval(interval);

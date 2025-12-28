@@ -30,9 +30,9 @@ export function useFocusStats() {
 
     loadStats();
 
-    // Ouvir mudanças de outras abas/janelas para manter sincronizado
+    // Ouvir mudanças de outras abas/janelas
     window.addEventListener('storage', loadStats);
-    // Ouvir evento customizado para atualização instantânea na mesma aba
+    // Ouvir evento customizado
     window.addEventListener('focus-session-completed', loadStats);
 
     return () => {
@@ -47,7 +47,6 @@ export function useFocusStats() {
     
     // Se a última data salva não for hoje, reseta sessionsToday
     if (currentStats.lastSessionDate !== today) {
-      // Mas cuidado: não resetamos o streak aqui, apenas ao completar uma sessão validamos o streak
       setStats({
         ...currentStats,
         sessionsToday: 0, // Novo dia, zero sessões
@@ -57,7 +56,7 @@ export function useFocusStats() {
     }
   };
 
-  // Função para registrar uma nova sessão completada
+  // Função para registrar uma nova sessão completada (Sem parâmetros)
   const registerSession = () => {
     const today = new Date().toISOString().split('T')[0];
     const lastDate = stats.lastSessionDate;
@@ -76,15 +75,14 @@ export function useFocusStats() {
         // Fez ontem, aumenta streak
         newStreak += 1;
       } else {
-        // Quebrou a sequência (não fez ontem), reseta para 1 (hoje)
+        // Quebrou a sequência, reseta para 1
         newStreak = 1;
       }
     } else {
-      // Primeira vez de sempre
+      // Primeira vez
       newStreak = 1;
     }
 
-    // Se sessionsToday estava desatualizado (virada de dia), usa 0, senão usa o atual
     const currentSessions = stats.lastSessionDate === today ? stats.sessionsToday : 0;
 
     const newStats: FocusStats = {
@@ -96,7 +94,7 @@ export function useFocusStats() {
     setStats(newStats);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newStats));
     
-    // Dispara evento para atualizar outros componentes imediatamente
+    // Dispara evento
     window.dispatchEvent(new Event('focus-session-completed'));
   };
 
