@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useFocusStats } from '@/hooks/useFocusStats';
 
 // Tipos e Configurações
 type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
@@ -30,6 +31,9 @@ export default function TimerCard() {
 
   // --- ESTADO VISUAL ---
   const [quote, setQuote] = useState(QUOTES[0]);
+
+  // --- HOOK DE ESTATÍSTICAS (NOVO) ---
+  const { registerSession } = useFocusStats();
 
   // --- PERSISTÊNCIA (Core mantido) ---
   useEffect(() => {
@@ -90,18 +94,28 @@ export default function TimerCard() {
     },
   }[mode];
 
-  // --- EFEITOS DE TIMER ---
+  // --- EFEITOS DE TIMER (ATUALIZADO) ---
   useEffect(() => {
     let interval: NodeJS.Timeout;
+    
     if (isRunning && timeLeft > 0) {
       interval = setInterval(() => {
         setTimeLeft((prev) => prev - 1);
       }, 1000);
-    } else if (timeLeft === 0) {
+    } else if (timeLeft === 0 && isRunning) {
+      // O Timer acabou naturalmente agora
       setIsRunning(false);
+
+      // Só registra estatística se for uma sessão de Foco
+      if (mode === 'focus') {
+        registerSession();
+      }
+      
+      // Aqui você pode adicionar lógica de som futuramente (playAlarm)
     }
+    
     return () => clearInterval(interval);
-  }, [isRunning, timeLeft]);
+  }, [isRunning, timeLeft, mode, registerSession]);
 
   useEffect(() => {
     const minutes = Math.floor(timeLeft / 60);
@@ -226,7 +240,7 @@ export default function TimerCard() {
         </div>
       </div>
 
-      {/* ALTERAÇÃO AQUI: Frase Motivacional reposicionada abaixo do timer */}
+      {/* Frase Motivacional */}
       <div className={`
         z-10 mt-2 mb-4 w-full px-8 text-center shrink-0
         transition-all duration-1000 ease-in-out
