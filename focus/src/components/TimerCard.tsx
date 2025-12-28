@@ -6,6 +6,8 @@ import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { usePiP } from '@/hooks/usePiP';
 import { Maximize2, Minimize2, PictureInPicture2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+// Importar o novo componente de Tooltip
+import { SimpleTooltip } from '@/components/ui/Tooltip';
 
 // Tipos e Configurações
 type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
@@ -241,9 +243,7 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
       {/* Background FX */}
       <div className={`absolute top-0 left-0 w-full h-2/3 bg-gradient-to-b ${theme.gradient} to-transparent opacity-25 pointer-events-none transition-all duration-1000`} />
 
-      {/* --- CORREÇÃO AQUI ---
-         Canvas e Vídeo invisíveis mas RENDERIZADOS para o PiP funcionar 
-      */}
+      {/* Canvas e Vídeo invisíveis mas renderizados */}
       <canvas ref={canvasRef} className="absolute top-0 left-0 opacity-0 pointer-events-none -z-50" />
       <video ref={videoRef} className="absolute top-0 left-0 opacity-0 pointer-events-none -z-50" muted autoPlay playsInline />
 
@@ -275,31 +275,37 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
           {/* BOTÕES DE CONTROLE SUPERIOR (ZEN e PiP) */}
           <div className="absolute top-6 right-6 z-20 flex items-center gap-2">
             
-            <button
-              onClick={togglePiP}
-              className={`
-                p-2 rounded-full transition-all duration-300 group/pip
-                ${isPiPActive 
-                  ? 'text-cyan-400 bg-cyan-900/20' 
-                  : 'text-slate-600 hover:text-slate-300 hover:bg-white/5'}
-              `}
-              title={isPiPActive ? "Fechar Mini Player (P)" : "Abrir Mini Player (P)"}
-            >
-              <PictureInPicture2 className={`w-5 h-5 ${isPiPActive ? 'opacity-100' : 'opacity-50 group-hover/pip:opacity-100'}`} />
-            </button>
-
-            {onToggleZen && (
+            {/* Tooltip para PiP */}
+            <SimpleTooltip content={isPiPActive ? "Fechar Mini Player (P)" : "Abrir Mini Player (P)"} side="left">
               <button
-                onClick={onToggleZen}
-                className="p-2 rounded-full text-slate-600 hover:text-slate-300 hover:bg-white/5 transition-all duration-300 group/zen"
-                title="Modo Zen (Atalho: Z)"
+                onClick={togglePiP}
+                // Removido o atributo 'title' antigo
+                className={`
+                  p-2 rounded-full transition-all duration-300 group/pip
+                  ${isPiPActive 
+                    ? 'text-cyan-400 bg-cyan-900/20' 
+                    : 'text-slate-600 hover:text-slate-300 hover:bg-white/5'}
+                `}
               >
-                {isZenMode ? (
-                  <Minimize2 className="w-5 h-5 opacity-50 group-hover/zen:opacity-100" />
-                ) : (
-                  <Maximize2 className="w-5 h-5 opacity-50 group-hover/zen:opacity-100" />
-                )}
+                <PictureInPicture2 className={`w-5 h-5 ${isPiPActive ? 'opacity-100' : 'opacity-50 group-hover/pip:opacity-100'}`} />
               </button>
+            </SimpleTooltip>
+
+            {/* Tooltip para Zen */}
+            {onToggleZen && (
+              <SimpleTooltip content={isZenMode ? "Sair do Modo Zen (Z)" : "Modo Zen (Z)"} side="left">
+                <button
+                  onClick={onToggleZen}
+                  // Removido o atributo 'title' antigo
+                  className="p-2 rounded-full text-slate-600 hover:text-slate-300 hover:bg-white/5 transition-all duration-300 group/zen"
+                >
+                  {isZenMode ? (
+                    <Minimize2 className="w-5 h-5 opacity-50 group-hover/zen:opacity-100" />
+                  ) : (
+                    <Maximize2 className="w-5 h-5 opacity-50 group-hover/zen:opacity-100" />
+                  )}
+                </button>
+              </SimpleTooltip>
             )}
           </div>
 
@@ -313,19 +319,21 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
 
             <div className="flex p-1.5 bg-slate-900/60 rounded-2xl border border-white/5 backdrop-blur-md shadow-inner overflow-x-auto max-w-full scrollbar-hide">
               {(Object.keys(MODES) as TimerMode[]).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => switchMode(m)}
-                  className={`
-                    px-4 py-2 rounded-xl text-[10px] sm:text-[11px] font-bold uppercase tracking-wide transition-all duration-300 whitespace-nowrap
-                    ${mode === m
-                      ? `${theme.bg} text-white shadow-lg scale-100`
-                      : 'text-slate-500 hover:text-slate-300 hover:bg-white/5 scale-95'}
-                  `}
-                  title={m === 'focus' ? 'Atalho: M' : ''}
-                >
-                  {MODES[m].label}
-                </button>
+                // Tooltip para os Modos
+                <SimpleTooltip key={m} content={m === 'focus' ? 'Atalho: M' : ''} side="top">
+                    <button
+                    onClick={() => switchMode(m)}
+                    // Removido o atributo 'title' antigo
+                    className={`
+                        px-4 py-2 rounded-xl text-[10px] sm:text-[11px] font-bold uppercase tracking-wide transition-all duration-300 whitespace-nowrap
+                        ${mode === m
+                        ? `${theme.bg} text-white shadow-lg scale-100`
+                        : 'text-slate-500 hover:text-slate-300 hover:bg-white/5 scale-95'}
+                    `}
+                    >
+                    {MODES[m].label}
+                    </button>
+                </SimpleTooltip>
               ))}
             </div>
 
@@ -382,37 +390,43 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
           </div>
 
           <div className="z-10 w-full flex flex-col items-center justify-center gap-4 pb-4 shrink-0">
-            <button
-              onClick={toggleTimer}
-              className={`
-                w-20 h-20 rounded-full 
-                flex items-center justify-center
-                text-white shadow-2xl 
-                transition-all duration-300 ease-out
-                hover:scale-110 active:scale-95
-                ${theme.bg}
-                ring-4 ring-slate-950 ring-offset-2 ring-offset-slate-900/50
-              `}
-              title={isRunning ? "Pausar (Espaço)" : "Iniciar (Espaço)"}
-            >
-              {isCompleted ? (
-                 <svg className="w-8 h-8 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-              ) : (
-                 isRunning ? (
-                  <svg className="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
-                 ) : (
-                  <svg className="w-8 h-8 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                 )
-              )}
-            </button>
+            {/* Tooltip para Iniciar/Pausar */}
+            <SimpleTooltip content={isRunning ? "Pausar (Espaço)" : "Iniciar (Espaço)"} side="bottom">
+                <button
+                onClick={toggleTimer}
+                // Removido o atributo 'title' antigo
+                className={`
+                    w-20 h-20 rounded-full 
+                    flex items-center justify-center
+                    text-white shadow-2xl 
+                    transition-all duration-300 ease-out
+                    hover:scale-110 active:scale-95
+                    ${theme.bg}
+                    ring-4 ring-slate-950 ring-offset-2 ring-offset-slate-900/50
+                `}
+                >
+                {isCompleted ? (
+                    <svg className="w-8 h-8 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                ) : (
+                    isRunning ? (
+                    <svg className="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+                    ) : (
+                    <svg className="w-8 h-8 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                    )
+                )}
+                </button>
+            </SimpleTooltip>
 
-            <button
-              onClick={resetTimer}
-              className="text-[10px] font-bold text-slate-500 hover:text-slate-300 uppercase tracking-widest transition-colors"
-              title="Atalho: R"
-            >
-              Reiniciar
-            </button>
+            {/* Tooltip para Reiniciar */}
+            <SimpleTooltip content="Reiniciar (R)" side="bottom">
+                <button
+                onClick={resetTimer}
+                // Removido o atributo 'title' antigo
+                className="text-[10px] font-bold text-slate-500 hover:text-slate-300 uppercase tracking-widest transition-colors"
+                >
+                Reiniciar
+                </button>
+            </SimpleTooltip>
           </div>
         </>
       )}
