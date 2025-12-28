@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useFocusStats } from '@/hooks/useFocusStats';
+import { useSoundEffects } from '@/hooks/useSoundEffects'; // <--- Import Novo
 import { Maximize2, Minimize2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -39,13 +40,13 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
   // Estado para feedback visual de conclusão
   const [isCompleted, setIsCompleted] = useState(false);
 
-  // --- HOOK DE ESTATÍSTICAS ---
+  // --- HOOKS ---
   const { registerSession } = useFocusStats();
+  const { playClick, playSwitch, playDone } = useSoundEffects(); // <--- Hook de Sons
 
   // --- PERSISTÊNCIA ---
   useEffect(() => {
-    // Simula um delay mínimo apenas para suavizar a entrada (opcional, remove o 'flash' instantâneo)
-    // Na prática, isso garante que o Skeleton apareça por pelo menos alguns ms se o processamento for muito rápido
+    // Delay simulado para Skeleton Loading
     const timer = setTimeout(() => {
       const savedMode = localStorage.getItem('focus_timer_mode') as TimerMode;
       const savedTime = localStorage.getItem('focus_timer_time');
@@ -57,8 +58,8 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
         const parsedTime = parseInt(savedTime, 10);
         if (!isNaN(parsedTime)) setTimeLeft(parsedTime);
       }
-      setIsLoaded(true); // <--- Só libera a UI real aqui
-    }, 50); // 50ms é imperceptível mas suficiente para o React hidratar o frame
+      setIsLoaded(true);
+    }, 50);
 
     return () => clearTimeout(timer);
   }, []);
@@ -107,30 +108,31 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
 
   // --- ACTIONS ---
   const switchMode = useCallback((newMode: TimerMode) => {
+    playSwitch(); // <--- Som de troca
     setMode(newMode);
     setTimeLeft(MODES[newMode].minutes * 60);
     setIsRunning(false);
     setIsCompleted(false);
-  }, []);
+  }, [playSwitch]);
 
   const toggleTimer = useCallback(() => {
+    playClick(); // <--- Som de clique
     setIsRunning((prev) => !prev);
     setIsCompleted(false);
-  }, []);
+  }, [playClick]);
 
   const resetTimer = useCallback(() => {
+    playSwitch(); // <--- Som de reset (mesmo do switch ou crie um novo)
     setIsRunning(false);
     setIsCompleted(false);
     setTimeLeft(MODES[mode].minutes * 60);
     setQuote(QUOTES[Math.floor(Math.random() * QUOTES.length)]);
-  }, [mode]);
+  }, [mode, playSwitch]);
 
   // --- ATALHOS DE TECLADO ---
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-
-      // Atalhos só funcionam se estiver carregado
       if (!isLoaded) return;
 
       switch (e.code) {
@@ -147,14 +149,17 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
           switchMode(nextKey);
           break;
         case 'KeyZ':
-          if (onToggleZen) onToggleZen();
+          if (onToggleZen) {
+            playClick(); // Som sutil ao entrar no Zen
+            onToggleZen();
+          }
           break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [mode, toggleTimer, resetTimer, switchMode, onToggleZen, isLoaded]);
+  }, [mode, toggleTimer, resetTimer, switchMode, onToggleZen, isLoaded, playClick]);
 
   // --- EFEITO DO TIMER ---
   useEffect(() => {
@@ -166,13 +171,14 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
     } else if (timeLeft === 0 && isRunning) {
       setIsRunning(false);
       setIsCompleted(true);
+      playDone(); // <--- Som de conclusão
       setTimeout(() => setIsCompleted(false), 4000);
       if (mode === 'focus') {
         registerSession();
       }
     }
     return () => clearInterval(interval);
-  }, [isRunning, timeLeft, mode, registerSession]);
+  }, [isRunning, timeLeft, mode, registerSession, playDone]);
 
   useEffect(() => {
     const minutes = Math.floor(timeLeft / 60);
@@ -225,44 +231,33 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
         group
       `}
     >
-      {/* BACKGROUND FX (Sempre visível para manter a atmosfera) */}
       <div className={`absolute top-0 left-0 w-full h-2/3 bg-gradient-to-b ${theme.gradient} to-transparent opacity-25 pointer-events-none transition-all duration-1000`} />
 
-      {/* --- SKELETON LOADING STATE --- */}
       {!isLoaded ? (
+        // --- SKELETON ---
         <div className="w-full h-full flex flex-col justify-between items-center animate-pulse z-20">
-          {/* Header Skeleton */}
           <div className="w-full flex flex-col items-center gap-6 pt-2">
-             {/* Title Placeholder */}
              <div className="flex flex-col items-center gap-3">
                <div className="h-8 w-40 bg-slate-800/50 rounded-lg" />
                <div className="h-1 w-12 bg-slate-800/30 rounded-full" />
              </div>
-             {/* Tabs Placeholder */}
              <div className="h-10 w-full max-w-[280px] bg-slate-800/40 rounded-2xl" />
-             
-             {/* Text Placeholder */}
              <div className="flex flex-col items-center gap-2 mt-2">
                 <div className="h-3 w-32 bg-slate-800/40 rounded" />
                 <div className="h-2 w-24 bg-slate-800/30 rounded" />
              </div>
           </div>
-
-          {/* Timer Circle Skeleton */}
           <div className="relative w-64 h-64 sm:w-72 sm:h-72 rounded-full border-4 border-slate-800/30 flex items-center justify-center">
              <div className="h-20 w-40 bg-slate-800/50 rounded-xl" />
           </div>
-
-          {/* Footer Skeleton */}
           <div className="flex flex-col items-center gap-4 pb-4">
              <div className="w-20 h-20 rounded-full bg-slate-800/50" />
              <div className="h-3 w-16 bg-slate-800/30 rounded" />
           </div>
         </div>
       ) : (
-        /* --- CONTEÚDO REAL DA UI (Renderizado apenas quando isLoaded = true) --- */
+        // --- UI REAL ---
         <>
-          {/* BOTÃO MODO ZEN */}
           {onToggleZen && (
             <button
               onClick={onToggleZen}
@@ -277,7 +272,6 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
             </button>
           )}
 
-          {/* HEADER */}
           <div className="z-10 w-full flex flex-col items-center gap-6 pt-2 shrink-0">
             <div className="flex flex-col items-center gap-3">
               <h1 className="text-3xl sm:text-4xl font-extrabold tracking-[0.3em] text-transparent bg-clip-text bg-gradient-to-br from-slate-200 to-slate-500 uppercase select-none pl-2 transition-all duration-500">
@@ -314,7 +308,6 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
             </div>
           </div>
 
-          {/* CENTER: Timer */}
           <div className="flex-1 flex items-center justify-center w-full relative py-4">
             <div className={`
               relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center rounded-full 
@@ -347,7 +340,6 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
             </div>
           </div>
 
-          {/* Frase Motivacional */}
           <div className={`
             z-10 mt-2 mb-4 w-full px-8 text-center shrink-0
             transition-all duration-1000 ease-in-out
@@ -358,7 +350,6 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
             </p>
           </div>
 
-          {/* FOOTER: Controles */}
           <div className="z-10 w-full flex flex-col items-center justify-center gap-4 pb-4 shrink-0">
             <button
               onClick={toggleTimer}
@@ -394,7 +385,6 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
           </div>
         </>
       )}
-
     </motion.div>
   );
 }
