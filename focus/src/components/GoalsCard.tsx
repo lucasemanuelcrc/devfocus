@@ -1,118 +1,163 @@
 'use client';
-import { useState, KeyboardEvent, useRef } from 'react';
-import { useGoals } from '@/hooks/useGoals';
+
+import { useState, useRef, useEffect } from 'react';
+import { useThemeColors } from '@/hooks/useThemeColors';
+
+// Interface para as metas (pode mover para types.ts depois)
+interface Goal {
+  id: string;
+  text: string;
+  completed: boolean;
+}
 
 export default function GoalsCard() {
-  const { goals, addGoal, toggleGoal, removeGoal } = useGoals();
+  const { colors } = useThemeColors();
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Estado local para gerenciar as metas
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [inputValue, setInputValue] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleAddGoal = () => {
-    const success = addGoal(inputValue);
-    if (success) {
-      setInputValue('');
-      setError(null);
-      if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
-    } else {
-      showError('Digite uma meta válida');
+  // Auto-scroll para o fim da lista ao adicionar item
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
+  }, [goals]);
+
+  // Handlers (Lógica de Negócio)
+  const addGoal = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!inputValue.trim()) return;
+
+    const newGoal: Goal = {
+      id: crypto.randomUUID(),
+      text: inputValue.trim(),
+      completed: false,
+    };
+
+    setGoals([...goals, newGoal]);
+    setInputValue('');
   };
 
-  const showError = (msg: string) => {
-    setError(msg);
-    if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
-    errorTimeoutRef.current = setTimeout(() => setError(null), 3000);
+  const toggleGoal = (id: string) => {
+    setGoals(goals.map(g =>
+      g.id === id ? { ...g, completed: !g.completed } : g
+    ));
   };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') handleAddGoal();
+  const removeGoal = (id: string) => {
+    setGoals(goals.filter(g => g.id !== id));
   };
 
-  const handleChange = (text: string) => {
-    setInputValue(text);
-    if (error) setError(null);
-  };
+  // Cálculos de Progresso
+  const totalGoals = goals.length;
+  const completedGoals = goals.filter(g => g.completed).length;
+  const progress = totalGoals === 0 ? 0 : (completedGoals / totalGoals) * 100;
 
   return (
-    // CARD: Fundo Slate Escuro com borda fina
-    <div className="flex flex-col h-full bg-slate-900/50 backdrop-blur-md rounded-3xl border border-white/10 overflow-hidden">
+    // CARD PRINCIPAL: Estética "Navy Premium" consistente com TimerCard
+    <div className="h-full flex flex-col bg-slate-950 border border-slate-800/50 rounded-[32px] shadow-xl shadow-black/20 overflow-hidden relative">
 
-      {/* HEADER: Fundo levemente diferenciado para separar áreas */}
-      <div className="shrink-0 p-6 bg-black/20 border-b border-white/5">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-sm font-bold text-slate-100 uppercase tracking-widest">
-            Metas
+      {/* HEADER: Título e Progresso */}
+      <div className="p-6 pb-2 shrink-0 z-10 bg-slate-950/95 backdrop-blur-sm">
+        <div className="flex justify-between items-end mb-3">
+          <h2 className={`text-xs font-bold tracking-[0.2em] uppercase transition-colors duration-500 ${colors.accent}`}>
+            Metas da Sessão
           </h2>
-          <span className="text-[10px] font-bold text-cyan-400 bg-cyan-950/30 px-2 py-1 rounded border border-cyan-900/50">
-            {goals.filter(g => g.completed).length} / {goals.length}
+          <span className="text-xs font-mono text-slate-500">
+            {completedGoals}/{totalGoals}
           </span>
         </div>
 
-        <div className="flex gap-2">
-          <div className="relative flex-1 group">
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => handleChange(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Adicionar nova tarefa..."
-              className={`w-full bg-slate-950/50 text-slate-200 text-sm rounded-xl pl-4 pr-12 py-3.5 focus:outline-none transition-all placeholder:text-slate-600
-                ${error
-                  ? 'border border-red-500/30 focus:border-red-500/50'
-                  : 'border border-white/5 focus:border-cyan-500/30 group-hover:border-white/10'
-                }`}
-            />
-            <button
-              onClick={handleAddGoal}
-              className="absolute right-1.5 top-1.5 bottom-1.5 px-3 bg-slate-800 hover:bg-cyan-600 hover:text-white text-slate-400 rounded-lg text-xs font-bold transition-all uppercase tracking-wide"
-            >
-              Add
-            </button>
-          </div>
-        </div>
-
-        <div className="h-4 mt-1">
-          {error && <span className="text-[10px] text-red-400 font-medium animate-pulse tracking-wide">{error}</span>}
+        {/* Barra de Progresso */}
+        <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
+          <div
+            className={`h-full transition-all duration-700 ease-out ${colors.buttonBg}`}
+            style={{ width: `${progress}%` }}
+          />
         </div>
       </div>
 
-      {/* LISTA */}
-      <div className="flex-1 overflow-y-auto min-h-0 px-4 py-4 space-y-2 custom-scrollbar">
+      {/* LISTA: Scrollável e Limpa */}
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto px-4 py-2 space-y-2 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent hover:scrollbar-thumb-slate-700"
+      >
         {goals.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
-            <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-3">
-              <span className="text-xl">✨</span>
-            </div>
-            <p className="text-xs text-slate-400 font-medium uppercase tracking-wide">Lista vazia</p>
+          // Empty State
+          <div className="h-full flex flex-col items-center justify-center text-slate-600 space-y-2 opacity-50">
+            <svg className="w-8 h-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <p className="text-xs font-medium">Nenhuma meta definida</p>
           </div>
         ) : (
-          <ul className="space-y-2">
-            {goals.map((goal) => (
-              <li
-                key={goal.id}
-                className="group flex items-center gap-3 p-3.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-transparent hover:border-white/5 transition-all animate-fade-in"
+          // Lista de Items
+          goals.map((goal) => (
+            <div
+              key={goal.id}
+              className="group flex items-center gap-3 p-3 rounded-xl bg-slate-900/50 border border-transparent hover:border-slate-800 hover:bg-slate-900 transition-all duration-200"
+            >
+              {/* Checkbox Customizado */}
+              <button
+                onClick={() => toggleGoal(goal.id)}
+                className={`
+                  shrink-0 w-5 h-5 rounded-md border flex items-center justify-center transition-all duration-300
+                  ${goal.completed
+                    ? `${colors.buttonBg} border-transparent text-white`
+                    : 'border-slate-700 text-transparent hover:border-slate-500'}
+                `}
               >
-                <button
-                  onClick={() => toggleGoal(goal.id)}
-                  className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all shrink-0 ${goal.completed
-                      ? 'bg-cyan-600 border-cyan-600 text-white shadow-lg shadow-cyan-900/50'
-                      : 'border-slate-600 bg-transparent hover:border-cyan-400'
-                    }`}
-                >
-                  {goal.completed && <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg>}
-                </button>
-                <span className={`flex-1 text-sm font-medium transition-all ${goal.completed ? 'text-slate-600 line-through decoration-slate-700' : 'text-slate-300'}`}>
-                  {goal.text}
-                </span>
-                <button onClick={() => removeGoal(goal.id)} className="opacity-0 group-hover:opacity-100 text-slate-600 hover:text-red-400 transition-colors px-2">
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-              </li>
-            ))}
-          </ul>
+                <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20"><path d="M0 11l2-2 5 5L18 3l2 2L7 18z" /></svg>
+              </button>
+
+              {/* Texto da Meta */}
+              <span
+                className={`flex-1 text-sm font-medium truncate transition-all duration-300 ${goal.completed ? 'text-slate-600 line-through' : 'text-slate-200'
+                  }`}
+              >
+                {goal.text}
+              </span>
+
+              {/* Botão de Remover (Aparece no Hover) */}
+              <button
+                onClick={() => removeGoal(goal.id)}
+                className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all duration-200"
+                title="Remover meta"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              </button>
+            </div>
+          ))
         )}
       </div>
+
+      {/* FOOTER: Input de Nova Meta */}
+      <div className="p-4 pt-2 bg-slate-950/95 backdrop-blur-sm z-10 border-t border-slate-900">
+        <form onSubmit={addGoal} className="relative flex items-center">
+          <input
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder="Adicionar nova meta..."
+            className="w-full pl-4 pr-12 py-3 bg-slate-900 rounded-xl text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-slate-700 transition-all shadow-inner"
+          />
+          <button
+            type="submit"
+            disabled={!inputValue.trim()}
+            className={`
+              absolute right-2 p-1.5 rounded-lg text-white transition-all duration-200
+              ${inputValue.trim()
+                ? `${colors.buttonBg} hover:opacity-90 shadow-lg`
+                : 'bg-slate-800 text-slate-500 cursor-not-allowed'}
+            `}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+          </button>
+        </form>
+      </div>
+
     </div>
   );
 }

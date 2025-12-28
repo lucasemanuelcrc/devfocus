@@ -4,21 +4,30 @@ import SoundsCard from '@/components/SoundsCard';
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black text-slate-200 p-6 md:p-10 lg:px-12 lg:py-10 font-sans selection:bg-cyan-500/30">
+    // Fundo atualizado para Navy Profundo (focus-base)
+    // selection:bg-brand-primary personaliza a cor de seleção de texto
+    <main className="min-h-screen bg-focus-base text-slate-200 p-6 md:p-8 lg:px-12 lg:py-10 font-sans selection:bg-brand-primary/30 flex items-center justify-center">
 
-      <div className="w-full max-w-[1600px] h-full lg:h-[800px] grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch mx-auto">
+      {/* Container Centralizado com Max-Width controlado para telas ultrawide */}
+      <div className="w-full max-w-[1400px] h-full lg:h-[800px] grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch mx-auto">
 
-        <section className="lg:col-span-8 h-[500px] lg:h-full relative z-10">
-          <TimerCard />
+        {/* Área Principal: Timer (Ocupa a maior parte da tela) */}
+        <section className="lg:col-span-8 h-[500px] lg:h-full relative z-10 flex flex-col">
+          <div className="flex-1 w-full h-full">
+            <TimerCard />
+          </div>
         </section>
 
-        <aside className="lg:col-span-4 flex flex-col gap-8 h-full min-h-0 relative z-10">
+        {/* Sidebar: Ferramentas Secundárias */}
+        <aside className="lg:col-span-4 flex flex-col gap-6 h-full min-h-0 relative z-10">
 
-          <div className="flex-1 min-h-0 shadow-xl shadow-black/20 rounded-3xl">
+          {/* Bloco de Metas: Flex-1 + min-h-0 força o scroll a acontecer DENTRO deste bloco */}
+          <div className="flex-1 min-h-0 w-full">
             <GoalsCard />
           </div>
 
-          <div className="shrink-0 shadow-xl shadow-black/20 rounded-3xl">
+          {/* Bloco de Sons: Altura ajustável ao conteúdo */}
+          <div className="shrink-0 w-full h-auto">
             <SoundsCard />
           </div>
 
