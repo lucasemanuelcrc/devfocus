@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useFocusStats } from '@/hooks/useFocusStats';
-import { useSoundEffects } from '@/hooks/useSoundEffects'; // <--- Import Novo
-import { Maximize2, Minimize2 } from 'lucide-react';
+import { useSoundEffects } from '@/hooks/useSoundEffects';
+import { usePiP } from '@/hooks/usePiP';
+import { Maximize2, Minimize2, PictureInPicture2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 // Tipos e Configurações
@@ -36,17 +37,20 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
   const [isRunning, setIsRunning] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [quote, setQuote] = useState(QUOTES[0]);
-  
-  // Estado para feedback visual de conclusão
   const [isCompleted, setIsCompleted] = useState(false);
 
   // --- HOOKS ---
   const { registerSession } = useFocusStats();
-  const { playClick, playSwitch, playDone } = useSoundEffects(); // <--- Hook de Sons
+  const { playClick, playSwitch, playDone } = useSoundEffects();
+  const { togglePiP, isPiPActive, canvasRef, videoRef } = usePiP({
+    timeLeft,
+    maxTime: MODES[mode].minutes * 60,
+    mode,
+    isRunning,
+  });
 
   // --- PERSISTÊNCIA ---
   useEffect(() => {
-    // Delay simulado para Skeleton Loading
     const timer = setTimeout(() => {
       const savedMode = localStorage.getItem('focus_timer_mode') as TimerMode;
       const savedTime = localStorage.getItem('focus_timer_time');
@@ -108,7 +112,7 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
 
   // --- ACTIONS ---
   const switchMode = useCallback((newMode: TimerMode) => {
-    playSwitch(); // <--- Som de troca
+    playSwitch();
     setMode(newMode);
     setTimeLeft(MODES[newMode].minutes * 60);
     setIsRunning(false);
@@ -116,13 +120,13 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
   }, [playSwitch]);
 
   const toggleTimer = useCallback(() => {
-    playClick(); // <--- Som de clique
+    playClick();
     setIsRunning((prev) => !prev);
     setIsCompleted(false);
   }, [playClick]);
 
   const resetTimer = useCallback(() => {
-    playSwitch(); // <--- Som de reset (mesmo do switch ou crie um novo)
+    playSwitch();
     setIsRunning(false);
     setIsCompleted(false);
     setTimeLeft(MODES[mode].minutes * 60);
@@ -150,16 +154,19 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
           break;
         case 'KeyZ':
           if (onToggleZen) {
-            playClick(); // Som sutil ao entrar no Zen
+            playClick();
             onToggleZen();
           }
+          break;
+        case 'KeyP':
+          togglePiP();
           break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [mode, toggleTimer, resetTimer, switchMode, onToggleZen, isLoaded, playClick]);
+  }, [mode, toggleTimer, resetTimer, switchMode, onToggleZen, isLoaded, playClick, togglePiP]);
 
   // --- EFEITO DO TIMER ---
   useEffect(() => {
@@ -171,7 +178,7 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
     } else if (timeLeft === 0 && isRunning) {
       setIsRunning(false);
       setIsCompleted(true);
-      playDone(); // <--- Som de conclusão
+      playDone();
       setTimeout(() => setIsCompleted(false), 4000);
       if (mode === 'focus') {
         registerSession();
@@ -231,7 +238,14 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
         group
       `}
     >
+      {/* Background FX */}
       <div className={`absolute top-0 left-0 w-full h-2/3 bg-gradient-to-b ${theme.gradient} to-transparent opacity-25 pointer-events-none transition-all duration-1000`} />
+
+      {/* --- CORREÇÃO AQUI ---
+         Canvas e Vídeo invisíveis mas RENDERIZADOS para o PiP funcionar 
+      */}
+      <canvas ref={canvasRef} className="absolute top-0 left-0 opacity-0 pointer-events-none -z-50" />
+      <video ref={videoRef} className="absolute top-0 left-0 opacity-0 pointer-events-none -z-50" muted autoPlay playsInline />
 
       {!isLoaded ? (
         // --- SKELETON ---
@@ -258,19 +272,36 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
       ) : (
         // --- UI REAL ---
         <>
-          {onToggleZen && (
+          {/* BOTÕES DE CONTROLE SUPERIOR (ZEN e PiP) */}
+          <div className="absolute top-6 right-6 z-20 flex items-center gap-2">
+            
             <button
-              onClick={onToggleZen}
-              className="absolute top-6 right-6 p-2 rounded-full text-slate-600 hover:text-slate-300 hover:bg-white/5 transition-all duration-300 z-20 group/zen"
-              title="Modo Zen (Atalho: Z)"
+              onClick={togglePiP}
+              className={`
+                p-2 rounded-full transition-all duration-300 group/pip
+                ${isPiPActive 
+                  ? 'text-cyan-400 bg-cyan-900/20' 
+                  : 'text-slate-600 hover:text-slate-300 hover:bg-white/5'}
+              `}
+              title={isPiPActive ? "Fechar Mini Player (P)" : "Abrir Mini Player (P)"}
             >
-              {isZenMode ? (
-                <Minimize2 className="w-5 h-5 opacity-50 group-hover/zen:opacity-100" />
-              ) : (
-                <Maximize2 className="w-5 h-5 opacity-50 group-hover/zen:opacity-100" />
-              )}
+              <PictureInPicture2 className={`w-5 h-5 ${isPiPActive ? 'opacity-100' : 'opacity-50 group-hover/pip:opacity-100'}`} />
             </button>
-          )}
+
+            {onToggleZen && (
+              <button
+                onClick={onToggleZen}
+                className="p-2 rounded-full text-slate-600 hover:text-slate-300 hover:bg-white/5 transition-all duration-300 group/zen"
+                title="Modo Zen (Atalho: Z)"
+              >
+                {isZenMode ? (
+                  <Minimize2 className="w-5 h-5 opacity-50 group-hover/zen:opacity-100" />
+                ) : (
+                  <Maximize2 className="w-5 h-5 opacity-50 group-hover/zen:opacity-100" />
+                )}
+              </button>
+            )}
+          </div>
 
           <div className="z-10 w-full flex flex-col items-center gap-6 pt-2 shrink-0">
             <div className="flex flex-col items-center gap-3">
