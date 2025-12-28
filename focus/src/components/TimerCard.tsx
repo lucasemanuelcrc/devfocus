@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useFocusStats } from '@/hooks/useFocusStats';
-import { Maximize2, Minimize2 } from 'lucide-react'; // <--- Import dos ícones
+import { Maximize2, Minimize2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 // Tipos e Configurações
 type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
@@ -22,7 +23,6 @@ const QUOTES = [
   "Um passo de cada vez.",
 ];
 
-// --- NOVA INTERFACE DE PROPS ---
 interface TimerCardProps {
   isZenMode?: boolean;
   onToggleZen?: () => void;
@@ -142,20 +142,26 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
   };
 
   return (
-    <div className={`
-      relative h-full flex flex-col justify-between items-center py-8 px-6 sm:px-10
-      rounded-[40px]
-      bg-slate-950 
-      border border-slate-800/60
-      shadow-2xl shadow-black/50
-      overflow-hidden
-      group
-      transition-all duration-700 ease-in-out
-    `}>
+    // ALTERAÇÃO AQUI: Ajuste fino na prop 'transition'
+    // stiffness: 100 (menos rigidez, mais lento)
+    // damping: 25 (mais amortecimento, sem 'quicar')
+    <motion.div 
+      layout
+      transition={{ type: "spring", stiffness: 100, damping: 25 }}
+      className={`
+        relative h-full flex flex-col justify-between items-center py-8 px-6 sm:px-10
+        rounded-[40px]
+        bg-slate-950 
+        border border-slate-800/60
+        shadow-2xl shadow-black/50
+        overflow-hidden
+        group
+      `}
+    >
       {/* BACKGROUND FX */}
       <div className={`absolute top-0 left-0 w-full h-2/3 bg-gradient-to-b ${theme.gradient} to-transparent opacity-25 pointer-events-none transition-all duration-1000`} />
 
-      {/* --- NOVO: BOTÃO MODO ZEN --- */}
+      {/* BOTÃO MODO ZEN */}
       {onToggleZen && (
         <button
           onClick={onToggleZen}
@@ -216,13 +222,25 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
           ${isRunning ? `animate-breathing-glow ${theme.glow}` : ''}
         `}>
           <svg className="w-full h-full absolute transform -rotate-90 drop-shadow-2xl" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="45" stroke="currentColor" strokeWidth="1.5" fill="transparent" className="text-slate-800/60" />
             <circle
-              cx="50" cy="50" r="45" stroke="currentColor" strokeWidth="2.5" fill="transparent"
-              strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset}
+              cx="50" cy="50" r="45"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              fill="transparent"
+              className="text-slate-800/60"
+            />
+            <circle
+              cx="50" cy="50" r="45"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              fill="transparent"
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              strokeDashoffset={strokeDashoffset}
               className={`transition-all duration-1000 ease-linear ${theme.ring}`}
             />
           </svg>
+
           <div className="z-10 flex flex-col items-center justify-center transform translate-y-1">
             <span className="text-7xl sm:text-8xl font-medium tracking-tighter text-white tabular-nums select-none drop-shadow-xl font-sans">
               {formatTime(timeLeft)}
@@ -250,8 +268,13 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
         <button
           onClick={toggleTimer}
           className={`
-            w-20 h-20 rounded-full flex items-center justify-center text-white shadow-2xl transition-all duration-300 ease-out hover:scale-110 active:scale-95
-            ${theme.bg} ring-4 ring-slate-950 ring-offset-2 ring-offset-slate-900/50
+            w-20 h-20 rounded-full 
+            flex items-center justify-center
+            text-white shadow-2xl 
+            transition-all duration-300 ease-out
+            hover:scale-110 active:scale-95
+            ${theme.bg}
+            ring-4 ring-slate-950 ring-offset-2 ring-offset-slate-900/50
           `}
           title={isRunning ? "Pausar" : "Iniciar"}
         >
@@ -261,10 +284,15 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
             <svg className="w-8 h-8 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
           )}
         </button>
-        <button onClick={resetTimer} className="text-[10px] font-bold text-slate-500 hover:text-slate-300 uppercase tracking-widest transition-colors">
+
+        <button
+          onClick={resetTimer}
+          className="text-[10px] font-bold text-slate-500 hover:text-slate-300 uppercase tracking-widest transition-colors"
+        >
           Reiniciar
         </button>
       </div>
-    </div>
+
+    </motion.div>
   );
 }
