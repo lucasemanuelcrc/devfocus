@@ -11,16 +11,28 @@ const MODES = {
   longBreak: { label: 'Descanso Longo', minutes: 15, color: 'violet' },
 };
 
+// Frases motivacionais rotativas
+const QUOTES = [
+  "Foque em uma coisa de cada vez.",
+  "Sessão de foco profundo.",
+  "Sem distrações agora.",
+  "Construa o seu futuro agora.",
+  "Silencie o ruído, amplie o foco.",
+  "Um passo de cada vez.",
+];
+
 export default function TimerCard() {
-  // --- ESTADO ---
+  // --- ESTADO (Core mantido) ---
   const [mode, setMode] = useState<TimerMode>('focus');
   const [timeLeft, setTimeLeft] = useState(MODES.focus.minutes * 60);
   const [isRunning, setIsRunning] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // --- PERSISTÊNCIA (NOVO) ---
+  // --- ESTADO VISUAL ---
+  const [quote, setQuote] = useState(QUOTES[0]);
+
+  // --- PERSISTÊNCIA (Core mantido) ---
   useEffect(() => {
-    // Carregar
     const savedMode = localStorage.getItem('focus_timer_mode') as TimerMode;
     const savedTime = localStorage.getItem('focus_timer_time');
 
@@ -35,13 +47,23 @@ export default function TimerCard() {
   }, []);
 
   useEffect(() => {
-    // Salvar
     if (isLoaded) {
       localStorage.setItem('focus_timer_mode', mode);
       localStorage.setItem('focus_timer_time', timeLeft.toString());
-      // Nota: Não salvamos 'isRunning' para evitar que o timer inicie sozinho no refresh
     }
   }, [mode, timeLeft, isLoaded]);
+
+  // --- LÓGICA DE UI ADICIONAL ---
+  useEffect(() => {
+    const randomQuote = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+    setQuote(randomQuote);
+  }, [mode]);
+
+  const getNextMode = () => {
+    if (mode === 'focus') return MODES.shortBreak;
+    return MODES.focus;
+  };
+  const nextMode = getNextMode();
 
   // --- MAPA DE CORES ---
   const theme = {
@@ -68,7 +90,7 @@ export default function TimerCard() {
     },
   }[mode];
 
-  // --- EFEITOS ---
+  // --- EFEITOS DE TIMER ---
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isRunning && timeLeft > 0) {
@@ -99,6 +121,7 @@ export default function TimerCard() {
   const resetTimer = () => {
     setIsRunning(false);
     setTimeLeft(MODES[mode].minutes * 60);
+    setQuote(QUOTES[Math.floor(Math.random() * QUOTES.length)]);
   };
 
   // Cálculos visuais SVG
@@ -128,7 +151,7 @@ export default function TimerCard() {
       <div className={`absolute top-0 left-0 w-full h-2/3 bg-gradient-to-b ${theme.gradient} to-transparent opacity-25 pointer-events-none transition-all duration-1000`} />
 
       {/* HEADER */}
-      <div className="z-10 w-full flex flex-col items-center gap-6 pt-2">
+      <div className="z-10 w-full flex flex-col items-center gap-6 pt-2 shrink-0">
         <div className="flex flex-col items-center gap-3">
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-[0.3em] text-transparent bg-clip-text bg-gradient-to-br from-slate-200 to-slate-500 uppercase select-none pl-2 transition-all duration-500">
             FOCUS
@@ -136,6 +159,7 @@ export default function TimerCard() {
           <div className={`w-12 h-0.5 rounded-full transition-colors duration-700 ${isRunning ? theme.bg : 'bg-slate-800'}`} />
         </div>
 
+        {/* Seletor de Modos */}
         <div className="flex p-1.5 bg-slate-900/60 rounded-2xl border border-white/5 backdrop-blur-md shadow-inner overflow-x-auto max-w-full scrollbar-hide">
           {(Object.keys(MODES) as TimerMode[]).map((m) => (
             <button
@@ -152,10 +176,20 @@ export default function TimerCard() {
             </button>
           ))}
         </div>
+
+        {/* Feedback Visual de Sessão */}
+        <div className="flex flex-col items-center gap-1">
+          <p className="text-[10px] font-bold tracking-wider uppercase text-slate-200 drop-shadow-sm">
+            Sessão Atual: <span className={`transition-colors duration-300 ${theme.text}`}>{MODES[mode].label} · {MODES[mode].minutes} min</span>
+          </p>
+          <p className="text-[9px] font-semibold tracking-wider uppercase text-slate-500">
+            Próximo: {nextMode.label} · {nextMode.minutes} min
+          </p>
+        </div>
       </div>
 
       {/* CENTER: Timer */}
-      <div className="flex-1 flex items-center justify-center w-full relative">
+      <div className="flex-1 flex items-center justify-center w-full relative py-4">
         <div className={`
           relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center rounded-full 
           transition-all duration-1000
@@ -181,7 +215,7 @@ export default function TimerCard() {
             />
           </svg>
 
-          <div className="z-10 flex flex-col items-center justify-center transform translate-y-2">
+          <div className="z-10 flex flex-col items-center justify-center transform translate-y-1">
             <span className="text-7xl sm:text-8xl font-medium tracking-tighter text-white tabular-nums select-none drop-shadow-xl font-sans">
               {formatTime(timeLeft)}
             </span>
@@ -192,8 +226,19 @@ export default function TimerCard() {
         </div>
       </div>
 
+      {/* ALTERAÇÃO AQUI: Frase Motivacional reposicionada abaixo do timer */}
+      <div className={`
+        z-10 mt-2 mb-4 w-full px-8 text-center shrink-0
+        transition-all duration-1000 ease-in-out
+        ${isRunning ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}
+      `}>
+        <p className="text-[11px] text-slate-400 font-medium tracking-wider leading-relaxed select-none">
+          {quote}
+        </p>
+      </div>
+
       {/* FOOTER: Controles */}
-      <div className="z-10 w-full flex flex-col items-center justify-center gap-4 pb-4">
+      <div className="z-10 w-full flex flex-col items-center justify-center gap-4 pb-4 shrink-0">
         <button
           onClick={toggleTimer}
           className={`
@@ -216,11 +261,12 @@ export default function TimerCard() {
 
         <button
           onClick={resetTimer}
-          className="text-[10px] font-bold text-slate-600 hover:text-slate-400 uppercase tracking-widest transition-colors"
+          className="text-[10px] font-bold text-slate-500 hover:text-slate-300 uppercase tracking-widest transition-colors"
         >
           Reiniciar
         </button>
       </div>
+
     </div>
   );
 }
