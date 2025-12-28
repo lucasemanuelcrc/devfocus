@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useFocusStats } from '@/hooks/useFocusStats';
+import { Maximize2, Minimize2 } from 'lucide-react'; // <--- Import dos ícones
 
 // Tipos e Configurações
 type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
@@ -12,7 +13,6 @@ const MODES = {
   longBreak: { label: 'Descanso Longo', minutes: 15, color: 'violet' },
 };
 
-// Frases motivacionais rotativas
 const QUOTES = [
   "Foque em uma coisa de cada vez.",
   "Sessão de foco profundo.",
@@ -22,14 +22,18 @@ const QUOTES = [
   "Um passo de cada vez.",
 ];
 
-export default function TimerCard() {
+// --- NOVA INTERFACE DE PROPS ---
+interface TimerCardProps {
+  isZenMode?: boolean;
+  onToggleZen?: () => void;
+}
+
+export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardProps) {
   // --- ESTADO (Core mantido) ---
   const [mode, setMode] = useState<TimerMode>('focus');
   const [timeLeft, setTimeLeft] = useState(MODES.focus.minutes * 60);
   const [isRunning, setIsRunning] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
-
-  // --- ESTADO VISUAL ---
   const [quote, setQuote] = useState(QUOTES[0]);
 
   // --- HOOK DE ESTATÍSTICAS ---
@@ -57,7 +61,6 @@ export default function TimerCard() {
     }
   }, [mode, timeLeft, isLoaded]);
 
-  // --- LÓGICA DE UI ADICIONAL ---
   useEffect(() => {
     const randomQuote = QUOTES[Math.floor(Math.random() * QUOTES.length)];
     setQuote(randomQuote);
@@ -69,7 +72,6 @@ export default function TimerCard() {
   };
   const nextMode = getNextMode();
 
-  // --- MAPA DE CORES ---
   const theme = {
     focus: {
       text: 'text-cyan-400',
@@ -94,26 +96,18 @@ export default function TimerCard() {
     },
   }[mode];
 
-  // --- EFEITOS DE TIMER (REVERTIDO PARA O PADRÃO) ---
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    
     if (isRunning && timeLeft > 0) {
       interval = setInterval(() => {
         setTimeLeft((prev) => prev - 1);
       }, 1000);
     } else if (timeLeft === 0 && isRunning) {
-      // O Timer acabou naturalmente agora
       setIsRunning(false);
-
-      // Só registra estatística se for uma sessão de Foco
       if (mode === 'focus') {
-        registerSession(); // <--- Volta a ser chamado sem argumentos
+        registerSession();
       }
-      
-      // Lógica de som futura...
     }
-    
     return () => clearInterval(interval);
   }, [isRunning, timeLeft, mode, registerSession]);
 
@@ -123,7 +117,6 @@ export default function TimerCard() {
     document.title = `${minutes}:${seconds < 10 ? '0' : ''}${seconds} - FOCUS`;
   }, [timeLeft]);
 
-  // --- HANDLERS ---
   const switchMode = (newMode: TimerMode) => {
     setMode(newMode);
     setTimeLeft(MODES[newMode].minutes * 60);
@@ -138,7 +131,6 @@ export default function TimerCard() {
     setQuote(QUOTES[Math.floor(Math.random() * QUOTES.length)]);
   };
 
-  // Cálculos visuais SVG
   const totalTime = MODES[mode].minutes * 60;
   const circumference = 283;
   const strokeDashoffset = circumference - (timeLeft / totalTime) * circumference;
@@ -150,7 +142,6 @@ export default function TimerCard() {
   };
 
   return (
-    // CARD PRINCIPAL
     <div className={`
       relative h-full flex flex-col justify-between items-center py-8 px-6 sm:px-10
       rounded-[40px]
@@ -159,10 +150,25 @@ export default function TimerCard() {
       shadow-2xl shadow-black/50
       overflow-hidden
       group
+      transition-all duration-700 ease-in-out
     `}>
-
       {/* BACKGROUND FX */}
       <div className={`absolute top-0 left-0 w-full h-2/3 bg-gradient-to-b ${theme.gradient} to-transparent opacity-25 pointer-events-none transition-all duration-1000`} />
+
+      {/* --- NOVO: BOTÃO MODO ZEN --- */}
+      {onToggleZen && (
+        <button
+          onClick={onToggleZen}
+          className="absolute top-6 right-6 p-2 rounded-full text-slate-600 hover:text-slate-300 hover:bg-white/5 transition-all duration-300 z-20 group/zen"
+          title={isZenMode ? "Sair do Modo Zen" : "Modo Zen"}
+        >
+          {isZenMode ? (
+            <Minimize2 className="w-5 h-5 opacity-50 group-hover/zen:opacity-100" />
+          ) : (
+            <Maximize2 className="w-5 h-5 opacity-50 group-hover/zen:opacity-100" />
+          )}
+        </button>
+      )}
 
       {/* HEADER */}
       <div className="z-10 w-full flex flex-col items-center gap-6 pt-2 shrink-0">
@@ -210,25 +216,13 @@ export default function TimerCard() {
           ${isRunning ? `animate-breathing-glow ${theme.glow}` : ''}
         `}>
           <svg className="w-full h-full absolute transform -rotate-90 drop-shadow-2xl" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="45" stroke="currentColor" strokeWidth="1.5" fill="transparent" className="text-slate-800/60" />
             <circle
-              cx="50" cy="50" r="45"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              fill="transparent"
-              className="text-slate-800/60"
-            />
-            <circle
-              cx="50" cy="50" r="45"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              fill="transparent"
-              strokeLinecap="round"
-              strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
+              cx="50" cy="50" r="45" stroke="currentColor" strokeWidth="2.5" fill="transparent"
+              strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset}
               className={`transition-all duration-1000 ease-linear ${theme.ring}`}
             />
           </svg>
-
           <div className="z-10 flex flex-col items-center justify-center transform translate-y-1">
             <span className="text-7xl sm:text-8xl font-medium tracking-tighter text-white tabular-nums select-none drop-shadow-xl font-sans">
               {formatTime(timeLeft)}
@@ -256,13 +250,8 @@ export default function TimerCard() {
         <button
           onClick={toggleTimer}
           className={`
-            w-20 h-20 rounded-full 
-            flex items-center justify-center
-            text-white shadow-2xl 
-            transition-all duration-300 ease-out
-            hover:scale-110 active:scale-95
-            ${theme.bg}
-            ring-4 ring-slate-950 ring-offset-2 ring-offset-slate-900/50
+            w-20 h-20 rounded-full flex items-center justify-center text-white shadow-2xl transition-all duration-300 ease-out hover:scale-110 active:scale-95
+            ${theme.bg} ring-4 ring-slate-950 ring-offset-2 ring-offset-slate-900/50
           `}
           title={isRunning ? "Pausar" : "Iniciar"}
         >
@@ -272,15 +261,10 @@ export default function TimerCard() {
             <svg className="w-8 h-8 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
           )}
         </button>
-
-        <button
-          onClick={resetTimer}
-          className="text-[10px] font-bold text-slate-500 hover:text-slate-300 uppercase tracking-widest transition-colors"
-        >
+        <button onClick={resetTimer} className="text-[10px] font-bold text-slate-500 hover:text-slate-300 uppercase tracking-widest transition-colors">
           Reiniciar
         </button>
       </div>
-
     </div>
   );
 }
