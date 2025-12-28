@@ -21,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
       <body
         // Injetamos a variável da fonte e aplicamos as classes base
         className={`${fontSans.variable} font-sans antialiased bg-focus-base text-slate-200`}
