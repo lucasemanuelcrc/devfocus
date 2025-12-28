@@ -5,19 +5,20 @@ import { useState, useEffect } from 'react';
 // Tipos e Configurações
 type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
 
+// ALTERAÇÃO: Renomeação dos rótulos para maior clareza semântica
 const MODES = {
-  focus: { label: 'Foco', minutes: 25, color: 'cyan' },
-  shortBreak: { label: 'Curta', minutes: 5, color: 'emerald' },
-  longBreak: { label: 'Longa', minutes: 15, color: 'violet' },
+  focus: { label: 'Deep Focus', minutes: 25, color: 'cyan' },
+  shortBreak: { label: 'Descanso Curto', minutes: 5, color: 'emerald' },
+  longBreak: { label: 'Descanso Longo', minutes: 15, color: 'violet' },
 };
 
 export default function TimerCard() {
-  // --- ESTADO ---
+  // --- ESTADO (INTOCADO) ---
   const [mode, setMode] = useState<TimerMode>('focus');
   const [timeLeft, setTimeLeft] = useState(MODES.focus.minutes * 60);
   const [isRunning, setIsRunning] = useState(false);
 
-  // --- MAPA DE CORES ---
+  // --- MAPA DE CORES (INTOCADO) ---
   const theme = {
     focus: {
       text: 'text-cyan-400',
@@ -42,7 +43,7 @@ export default function TimerCard() {
     },
   }[mode];
 
-  // --- EFEITOS ---
+  // --- EFEITOS (INTOCADO) ---
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isRunning && timeLeft > 0) {
@@ -61,7 +62,7 @@ export default function TimerCard() {
     document.title = `${minutes}:${seconds < 10 ? '0' : ''}${seconds} - FOCUS`;
   }, [timeLeft]);
 
-  // --- HANDLERS ---
+  // --- HANDLERS (INTOCADO) ---
   const switchMode = (newMode: TimerMode) => {
     setMode(newMode);
     setTimeLeft(MODES[newMode].minutes * 60);
@@ -103,20 +104,23 @@ export default function TimerCard() {
 
       {/* HEADER */}
       <div className="z-10 w-full flex flex-col items-center gap-6 pt-2">
-        <div className="flex flex-col items-center gap-2">
-          <h1 className="text-sm sm:text-base font-extrabold tracking-[0.5em] text-transparent bg-clip-text bg-gradient-to-br from-slate-200 to-slate-500 uppercase select-none pl-2">
+        <div className="flex flex-col items-center gap-3">
+          {/* ALTERAÇÃO: Aumento significativo da tipografia para destaque visual (text-3xl sm:text-4xl) */}
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-[0.3em] text-transparent bg-clip-text bg-gradient-to-br from-slate-200 to-slate-500 uppercase select-none pl-2 transition-all duration-500">
             FOCUS
           </h1>
-          <div className={`w-8 h-0.5 rounded-full transition-colors duration-700 ${isRunning ? theme.bg : 'bg-slate-800'}`} />
+          <div className={`w-12 h-0.5 rounded-full transition-colors duration-700 ${isRunning ? theme.bg : 'bg-slate-800'}`} />
         </div>
 
-        <div className="flex p-1.5 bg-slate-900/60 rounded-2xl border border-white/5 backdrop-blur-md shadow-inner">
+        <div className="flex p-1.5 bg-slate-900/60 rounded-2xl border border-white/5 backdrop-blur-md shadow-inner overflow-x-auto max-w-full scrollbar-hide">
           {(Object.keys(MODES) as TimerMode[]).map((m) => (
             <button
               key={m}
               onClick={() => switchMode(m)}
+              // ALTERAÇÃO: Adicionado whitespace-nowrap para evitar quebra de linha nos textos longos
+              // Ajustado px-4 para equilibrar o tamanho com os novos rótulos
               className={`
-                px-5 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wide transition-all duration-300
+                px-4 py-2 rounded-xl text-[10px] sm:text-[11px] font-bold uppercase tracking-wide transition-all duration-300 whitespace-nowrap
                 ${mode === m
                   ? `${theme.bg} text-white shadow-lg scale-100`
                   : 'text-slate-500 hover:text-slate-300 hover:bg-white/5 scale-95'}
@@ -182,10 +186,10 @@ export default function TimerCard() {
           title={isRunning ? "Pausar" : "Iniciar"}
         >
           {isRunning ? (
-            // Ícone PAUSE (Geometricamente centralizado)
+            // Ícone PAUSE
             <svg className="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
           ) : (
-            // Ícone PLAY (Ajustado com ml-1 para compensar o peso visual)
+            // Ícone PLAY
             <svg className="w-8 h-8 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
           )}
         </button>

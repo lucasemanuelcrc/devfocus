@@ -63,7 +63,7 @@ export default function GoalsCard() {
       <div className="p-6 pb-2 shrink-0 z-10 bg-slate-950/95 backdrop-blur-sm">
         <div className="flex justify-between items-end mb-3">
           <h2 className={`text-xs font-bold tracking-[0.2em] uppercase transition-colors duration-500 ${colors.accent}`}>
-            Metas da Sessão
+            Minhas Metas
           </h2>
           <span className="text-xs font-mono text-slate-500">
             {completedGoals}/{totalGoals}
@@ -82,7 +82,8 @@ export default function GoalsCard() {
       {/* LISTA: Scrollável e Limpa */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto px-4 py-2 space-y-2 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent hover:scrollbar-thumb-slate-700"
+        // Aplicação da nova scrollbar elegante do Projeto FOCUS
+        className="flex-1 overflow-y-auto px-4 py-2 space-y-2 scrollbar-focus"
       >
         {goals.length === 0 ? (
           // Empty State

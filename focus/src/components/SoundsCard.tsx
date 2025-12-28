@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
-// Tipagem inline para manter consistência se não houver arquivo externo
+// Tipagem inline mantida
 interface SoundTrack {
   id: string;
   title: string;
@@ -11,9 +11,9 @@ interface SoundTrack {
 }
 
 const PLAYLISTS: SoundTrack[] = [
-  { id: '1', title: 'Lofi Girl', url: 'https://www.youtube.com/embed/jfKfPfyJRdk' },
+  { id: '1', title: 'Lofi', url: 'https://www.youtube.com/embed/jfKfPfyJRdk' },
   { id: '2', title: 'Synthwave', url: 'https://www.youtube.com/embed/4xDzrJKXOOY' },
-  { id: '3', title: 'Classical', url: 'https://www.youtube.com/embed/mIYzp5rcTvU' },
+  { id: '3', title: 'Classicos', url: 'https://www.youtube.com/embed/mIYzp5rcTvU' },
 ];
 
 export default function SoundsCard() {
@@ -21,13 +21,13 @@ export default function SoundsCard() {
   const { colors } = useThemeColors();
 
   return (
-    // CARD PRINCIPAL: Estética "Navy Premium" consistente
+    // CARD PRINCIPAL
     <div className="h-full flex flex-col bg-slate-950 border border-slate-800/50 rounded-[32px] shadow-xl shadow-black/20 overflow-hidden relative p-6">
 
-      {/* HEADER: Alinhado visualmente com GoalsCard */}
+      {/* HEADER */}
       <div className="flex items-center justify-between mb-5 shrink-0">
         <h2 className={`text-xs font-bold tracking-[0.2em] uppercase transition-colors duration-500 ${colors.accent}`}>
-          Ambiente
+          Focus Music
         </h2>
 
         {/* Indicador de Status "Live" */}
@@ -42,15 +42,16 @@ export default function SoundsCard() {
         </div>
       </div>
 
-      {/* PLAYER WRAPPER: Moldura elegante */}
-      <div className="w-full relative group mb-5 shadow-2xl shadow-black/50 rounded-2xl overflow-hidden border border-slate-800">
-        {/* Overlay para escurecer o vídeo e mantê-lo discreto */}
-        <div className="absolute inset-0 bg-slate-900/20 pointer-events-none z-10 group-hover:bg-transparent transition-colors duration-500" />
+      {/* PLAYER WRAPPER */}
+      <div className="w-full relative group mb-5 shadow-2xl shadow-black/50 rounded-2xl overflow-hidden border border-slate-800 bg-slate-900">
 
-        <div className="aspect-video w-full bg-slate-900">
+        {/* Aspect Ratio Container */}
+        <div className="aspect-video w-full">
           <iframe
             src={`${currentTrack.url}?autoplay=0&controls=0&rel=0&modestbranding=1`}
-            className="w-full h-full opacity-80 group-hover:opacity-100 transition-opacity duration-500 grayscale group-hover:grayscale-0"
+            // ALTERAÇÃO AQUI: Removido 'grayscale', 'opacity-80' e os efeitos de hover.
+            // Agora o vídeo fica sempre com cor total (opacity-100) e sem filtro cinza.
+            className="w-full h-full opacity-100"
             allow="autoplay; encrypted-media"
             title="Audio Player"
             loading="lazy"
@@ -58,7 +59,7 @@ export default function SoundsCard() {
         </div>
       </div>
 
-      {/* CONTROLS: Botões estilo "Chips" modernos */}
+      {/* CONTROLS: Botões estilo "Chips" */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
         {PLAYLISTS.map((track) => {
           const isActive = currentTrack.id === track.id;
