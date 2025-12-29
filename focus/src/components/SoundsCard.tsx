@@ -11,7 +11,7 @@ interface SoundTrack {
 
 const PLAYLISTS: SoundTrack[] = [
   { id: '1', title: 'Coding', url: 'https://www.youtube.com/embed/tXB7odE1HuA?si=vNyvfECHXaRQagLa' },
-  { id: '2', title: 'Deep', url: 'https://www.youtube.com/embed/yNAFtADhzss?si=zb4fvfY6sPTakF2J' },
+  { id: '2', title: 'Flow', url: 'https://www.youtube.com/embed/R3wto4Uy-Fg?si=580VuUiLhye67shi' },
   { id: '3', title: 'Break', url: 'https://www.youtube.com/embed/0w80F8FffQ4?si=-ks7deV7iKGjOTBU' },
 ];
 
