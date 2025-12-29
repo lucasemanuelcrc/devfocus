@@ -85,7 +85,7 @@ export default function GoalsCard() {
       <div className="p-6 pb-2 shrink-0 z-10 bg-slate-950/95 backdrop-blur-sm">
         <div className="flex justify-between items-end mb-3">
           <h2 className={`text-xs font-bold tracking-[0.2em] uppercase transition-colors duration-500 ${colors.accent}`}>
-            Minhas Metas
+            Metas da Sessão
           </h2>
           <span className="text-xs font-mono text-slate-500">
             {completedGoals}/{totalGoals}
@@ -156,7 +156,7 @@ export default function GoalsCard() {
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Adicionar nova meta..."
+            placeholder="Adicionar novo foco..."
             className="w-full pl-4 pr-12 py-3 bg-slate-900 rounded-xl text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-slate-700 transition-all shadow-inner"
           />
           <button

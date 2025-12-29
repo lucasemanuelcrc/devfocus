@@ -365,7 +365,7 @@ export default function TimerCard({ isZenMode = false, onToggleZen }: TimerCardP
                   {formatTime(timeLeft)}
                 </span>
                 <span className={`text-[10px] font-bold tracking-[0.2em] uppercase mt-2 opacity-80 transition-colors duration-500 ${theme.text}`}>
-                  {isCompleted ? 'CONCLUÍDO' : (isRunning ? 'Em fluxo' : 'Pausado')}
+                  {isCompleted ? 'CONCLUÍDO' : (isRunning ? 'Em andamento' : 'Pausado')}
                 </span>
               </div>
             </div>
