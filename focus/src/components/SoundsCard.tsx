@@ -10,9 +10,9 @@ interface SoundTrack {
 }
 
 const PLAYLISTS: SoundTrack[] = [
-  { id: '1', title: 'Lofi', url: 'https://www.youtube.com/embed/jfKfPfyJRdk' },
-  { id: '2', title: 'Synthwave', url: 'https://www.youtube.com/embed/4xDzrJKXOOY' },
-  { id: '3', title: 'Classicos', url: 'https://www.youtube.com/embed/mIYzp5rcTvU' },
+  { id: '1', title: 'Coding', url: 'https://www.youtube.com/embed/tXB7odE1HuA?si=vNyvfECHXaRQagLa' },
+  { id: '2', title: 'Deep', url: 'https://www.youtube.com/embed/yNAFtADhzss?si=zb4fvfY6sPTakF2J' },
+  { id: '3', title: 'Break', url: 'https://www.youtube.com/embed/0w80F8FffQ4?si=-ks7deV7iKGjOTBU' },
 ];
 
 export default function SoundsCard() {
