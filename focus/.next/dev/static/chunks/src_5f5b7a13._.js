@@ -1526,8 +1526,8 @@ const PLAYLISTS = [
     },
     {
         id: '2',
-        title: 'Deep',
-        url: 'https://www.youtube.com/embed/yNAFtADhzss?si=zb4fvfY6sPTakF2J'
+        title: 'Flow',
+        url: 'https://www.youtube.com/embed/R3wto4Uy-Fg?si=580VuUiLhye67shi'
     },
     {
         id: '3',
