@@ -143,111 +143,117 @@ __turbopack_context__.s([
     ()=>usePiP
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react.js [app-ssr] (ecmascript)");
-'use client';
 ;
-const COLORS = {
+// Mapeamento de cores para o Canvas do PiP (Hex Codes oficiais do projeto)
+const THEME_COLORS = {
     focus: '#06b6d4',
     shortBreak: '#10b981',
     longBreak: '#8b5cf6',
-    bg: '#020617',
-    text: '#e2e8f0'
+    custom: '#f59e0b'
 };
-function usePiP({ timeLeft, maxTime, mode, isRunning }) {
+const usePiP = ({ timeLeft, maxTime, mode, isRunning })=>{
     const [isPiPActive, setIsPiPActive] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
-    const canvasRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])(null);
     const videoRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])(null);
-    const formatTime = (seconds)=>{
-        const m = Math.floor(seconds / 60);
-        const s = seconds % 60;
-        return `${m}:${s < 10 ? '0' : ''}${s}`;
-    };
-    // Desenha no canvas
-    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
+    const canvasRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])(null);
+    const pipWindowRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])(null);
+    // Função para desenhar o timer no Canvas (que será transmitido para o PiP)
+    const drawCanvas = ()=>{
         const canvas = canvasRef.current;
-        const ctx = canvas?.getContext('2d');
-        if (!canvas || !ctx) return;
-        const size = 512;
-        if (canvas.width !== size) canvas.width = size;
-        if (canvas.height !== size) canvas.height = size;
-        // 1. Fundo
-        ctx.fillStyle = COLORS.bg;
-        ctx.fillRect(0, 0, size, size);
-        // 2. Anel Fundo
-        const centerX = size / 2;
-        const centerY = size / 2;
-        const radius = size * 0.4;
-        const strokeWidth = 40;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        // Configuração do Canvas
+        const width = 500;
+        const height = 500;
+        canvas.width = width;
+        canvas.height = height;
+        // Limpa o fundo (Dark Slate)
+        ctx.fillStyle = '#020617'; // slate-950
+        ctx.fillRect(0, 0, width, height);
+        // Cálculos do Círculo
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const radius = 200;
+        const progress = timeLeft / maxTime;
+        // Cor do Tema Atual
+        const themeColor = THEME_COLORS[mode] || THEME_COLORS.focus;
+        // 1. Círculo de Fundo (Cinza Escuro)
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-        ctx.strokeStyle = '#1e293b';
-        ctx.lineWidth = strokeWidth;
+        ctx.lineWidth = 25;
+        ctx.strokeStyle = '#1e293b'; // slate-800
         ctx.stroke();
-        // 3. Anel Progresso
-        const progress = 1 - timeLeft / maxTime;
-        const startAngle = -0.5 * Math.PI;
-        const endAngle = startAngle + progress * (2 * Math.PI);
+        // 2. Círculo de Progresso (Colorido)
+        const startAngle = -Math.PI / 2; // Começa no topo (12h)
+        const endAngle = startAngle + 2 * Math.PI * progress;
         ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-        ctx.strokeStyle = COLORS[mode];
-        ctx.lineWidth = strokeWidth;
+        ctx.arc(centerX, centerY, radius, startAngle, endAngle, false); // false = horário (decrescente visualmente ajustar se necessário)
+        // Nota: Para "encher" o círculo, usamos false. Para "esvaziar", a lógica inverte. 
+        // Vamos manter o padrão visual de "barra de vida"
+        ctx.lineWidth = 25;
         ctx.lineCap = 'round';
+        ctx.strokeStyle = themeColor;
+        ctx.shadowColor = themeColor;
+        ctx.shadowBlur = 30;
         ctx.stroke();
-        // 4. Texto
-        ctx.fillStyle = COLORS.text;
+        ctx.shadowBlur = 0; // Reset shadow para o texto
+        // 3. Texto do Tempo
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        const timeString = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 120px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(formatTime(timeLeft), centerX, centerY);
-        // 5. Status
-        ctx.font = 'bold 40px sans-serif';
-        ctx.fillStyle = isRunning ? COLORS[mode] : '#64748b';
-        ctx.fillText(isRunning ? 'FOCUS' : 'PAUSADO', centerX, centerY + 100);
+        ctx.fillText(timeString, centerX, centerY);
+        // 4. Texto do Estado (Foco, Pausado, etc)
+        ctx.fillStyle = themeColor;
+        ctx.font = '500 40px sans-serif';
+        ctx.fillText(isRunning ? 'EM ANDAMENTO' : 'PAUSADO', centerX, centerY + 100);
+    };
+    // Atualiza o canvas sempre que o tempo ou estado muda
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
+        drawCanvas();
     }, [
         timeLeft,
         maxTime,
         mode,
         isRunning
     ]);
-    const togglePiP = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(async ()=>{
-        const video = videoRef.current;
-        const canvas = canvasRef.current;
-        if (!video || !canvas) {
-            console.warn("Elemento de vídeo ou canvas não encontrado");
-            return;
-        }
-        try {
-            if (document.pictureInPictureElement) {
-                await document.exitPictureInPicture();
-                setIsPiPActive(false);
-            } else {
-                // Se o stream ainda não foi criado, cria agora
-                if (!video.srcObject) {
-                    const stream = canvas.captureStream(30);
-                    video.srcObject = stream;
-                }
-                // Aguarda metadados carregarem se necessário
-                if (video.readyState < 1) {
-                    await new Promise((resolve)=>{
-                        video.onloadedmetadata = ()=>resolve(true);
-                    });
-                }
-                // Toca o vídeo (requisito para PiP)
-                await video.play();
-                // Solicita o PiP
-                await video.requestPictureInPicture();
-                setIsPiPActive(true);
-            }
-        } catch (error) {
-            console.error('Erro PiP:', error);
-            setIsPiPActive(false);
-        }
-    }, []);
+    // Sincroniza o vídeo com o canvas (Stream)
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         const video = videoRef.current;
-        if (!video) return;
-        const onLeave = ()=>setIsPiPActive(false);
-        video.addEventListener('leavepictureinpicture', onLeave);
-        return ()=>video.removeEventListener('leavepictureinpicture', onLeave);
+        const canvas = canvasRef.current;
+        if (video && canvas && !video.srcObject) {
+            const stream = canvas.captureStream(30); // 30 FPS
+            video.srcObject = stream;
+            // Hack necessário para alguns navegadores manterem o stream ativo
+            video.play().catch(()=>{});
+        }
+    }, []);
+    const togglePiP = async ()=>{
+        if (document.pictureInPictureElement) {
+            // Se já estiver ativo, sai
+            await document.exitPictureInPicture();
+            setIsPiPActive(false);
+        } else if (videoRef.current) {
+            try {
+                // Tenta entrar no modo PiP
+                await videoRef.current.requestPictureInPicture();
+                setIsPiPActive(true);
+            } catch (error) {
+                console.error('Erro ao ativar PiP:', error);
+            }
+        }
+    };
+    // Detecta quando o usuário fecha o PiP pelo botão "X" da janela flutuante
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
+        const video = videoRef.current;
+        const onLeavePiP = ()=>setIsPiPActive(false);
+        if (video) {
+            video.addEventListener('leavepictureinpicture', onLeavePiP);
+            return ()=>video.removeEventListener('leavepictureinpicture', onLeavePiP);
+        }
     }, []);
     return {
         togglePiP,
@@ -255,7 +261,7 @@ function usePiP({ timeLeft, maxTime, mode, isRunning }) {
         canvasRef,
         videoRef
     };
-}
+};
 }),
 "[project]/src/components/TimerCard.tsx [app-ssr] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
@@ -272,7 +278,9 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$usePiP$2e$ts
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$maximize$2d$2$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Maximize2$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/maximize-2.js [app-ssr] (ecmascript) <export default as Maximize2>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$minimize$2d$2$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Minimize2$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/minimize-2.js [app-ssr] (ecmascript) <export default as Minimize2>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$picture$2d$in$2d$picture$2d$2$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__PictureInPicture2$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/picture-in-picture-2.js [app-ssr] (ecmascript) <export default as PictureInPicture2>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$sliders$2d$horizontal$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__SlidersHorizontal$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/sliders-horizontal.js [app-ssr] (ecmascript) <export default as SlidersHorizontal>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/framer-motion/dist/es/render/components/motion/proxy.mjs [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$components$2f$AnimatePresence$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs [app-ssr] (ecmascript)");
 'use client';
 ;
 ;
@@ -281,6 +289,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$framer$2d$mo
 ;
 ;
 ;
+// Adicionado o modo 'custom' mantendo os originais intactos
 const MODES = {
     focus: {
         label: 'Deep Focus',
@@ -299,6 +308,12 @@ const MODES = {
         minutes: 15,
         color: 'violet',
         hex: '#8b5cf6'
+    },
+    custom: {
+        label: 'Livre',
+        minutes: 30,
+        color: 'amber',
+        hex: '#f59e0b'
     }
 };
 const QUOTES = [
@@ -307,12 +322,14 @@ const QUOTES = [
     "Sem distrações agora.",
     "Construa o seu futuro agora.",
     "Silencie o ruído, amplie o foco.",
-    "Um passo de cada vez."
+    "Um passo de cada vez.",
+    "A disciplina é a liberdade."
 ];
 function TimerCard({ isZenMode = false, onToggleZen }) {
     // --- ESTADO ---
     const [mode, setMode] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])('focus');
     const [timeLeft, setTimeLeft] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(MODES.focus.minutes * 60);
+    const [customMinutes, setCustomMinutes] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(30); // Estado para o tempo personalizado
     const [isRunning, setIsRunning] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
     const [isLoaded, setIsLoaded] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
     const [quote, setQuote] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(QUOTES[0]);
@@ -320,17 +337,24 @@ function TimerCard({ isZenMode = false, onToggleZen }) {
     // --- HOOKS ---
     const { registerSession } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$useFocusStats$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useFocusStats"])();
     const { playClick, playSwitch, playDone } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$useSoundEffects$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useSoundEffects"])();
+    // PiP Hook precisa saber o tempo máximo dinamicamente
+    const maxTime = mode === 'custom' ? customMinutes * 60 : MODES[mode].minutes * 60;
     const { togglePiP, isPiPActive, canvasRef, videoRef } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$usePiP$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["usePiP"])({
         timeLeft,
-        maxTime: MODES[mode].minutes * 60,
+        maxTime,
         mode,
         isRunning
     });
-    // --- PERSISTÊNCIA ---
+    // --- PERSISTÊNCIA E INICIALIZAÇÃO ---
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         const timer = setTimeout(()=>{
             const savedMode = localStorage.getItem('focus_timer_mode');
             const savedTime = localStorage.getItem('focus_timer_time');
+            const savedCustom = localStorage.getItem('focus_custom_minutes');
+            // Restaura o tempo customizado salvo
+            if (savedCustom) {
+                setCustomMinutes(parseInt(savedCustom, 10));
+            }
             if (savedMode && MODES[savedMode]) {
                 setMode(savedMode);
             }
@@ -338,18 +362,34 @@ function TimerCard({ isZenMode = false, onToggleZen }) {
                 const parsedTime = parseInt(savedTime, 10);
                 if (!isNaN(parsedTime)) setTimeLeft(parsedTime);
             }
+            // Validação de Streak (Mantida da Base Oficial)
+            const lastDateIso = localStorage.getItem('focus-last-date');
+            if (lastDateIso) {
+                const lastDate = new Date(lastDateIso);
+                const today = new Date();
+                lastDate.setHours(0, 0, 0, 0);
+                today.setHours(0, 0, 0, 0);
+                const diffTime = Math.abs(today.getTime() - lastDate.getTime());
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                if (diffDays > 1) {
+                    localStorage.setItem('focus-streak', '0');
+                }
+            }
             setIsLoaded(true);
         }, 50);
         return ()=>clearTimeout(timer);
     }, []);
+    // Salva estados
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         if (isLoaded) {
             localStorage.setItem('focus_timer_mode', mode);
             localStorage.setItem('focus_timer_time', timeLeft.toString());
+            localStorage.setItem('focus_custom_minutes', customMinutes.toString());
         }
     }, [
         mode,
         timeLeft,
+        customMinutes,
         isLoaded
     ]);
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
@@ -358,11 +398,7 @@ function TimerCard({ isZenMode = false, onToggleZen }) {
     }, [
         mode
     ]);
-    const getNextMode = ()=>{
-        if (mode === 'focus') return MODES.shortBreak;
-        return MODES.focus;
-    };
-    const nextMode = getNextMode();
+    // --- TEMAS (Adicionado suporte ao modo Custom/Amber) ---
     const theme = {
         focus: {
             text: 'text-cyan-400',
@@ -384,18 +420,35 @@ function TimerCard({ isZenMode = false, onToggleZen }) {
             ring: 'text-violet-600',
             glow: 'shadow-violet-500/40',
             gradient: 'from-violet-900/20'
+        },
+        custom: {
+            text: 'text-amber-400',
+            bg: 'bg-amber-500',
+            ring: 'text-amber-500',
+            glow: 'shadow-amber-500/40',
+            gradient: 'from-amber-900/20'
         }
     }[mode];
     // --- ACTIONS ---
     const switchMode = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])((newMode)=>{
         playSwitch();
         setMode(newMode);
-        setTimeLeft(MODES[newMode].minutes * 60);
+        // Se for custom, usa o estado customMinutes, senão usa o fixo do MODES
+        const newMinutes = newMode === 'custom' ? customMinutes : MODES[newMode].minutes;
+        setTimeLeft(newMinutes * 60);
         setIsRunning(false);
         setIsCompleted(false);
     }, [
-        playSwitch
+        playSwitch,
+        customMinutes
     ]);
+    const handleCustomTimeChange = (e)=>{
+        const minutes = parseInt(e.target.value, 10);
+        setCustomMinutes(minutes);
+        if (!isRunning) {
+            setTimeLeft(minutes * 60);
+        }
+    };
     const toggleTimer = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(()=>{
         playClick();
         setIsRunning((prev)=>!prev);
@@ -407,29 +460,26 @@ function TimerCard({ isZenMode = false, onToggleZen }) {
         playSwitch();
         setIsRunning(false);
         setIsCompleted(false);
-        setTimeLeft(MODES[mode].minutes * 60);
+        const resetTime = mode === 'custom' ? customMinutes : MODES[mode].minutes;
+        setTimeLeft(resetTime * 60);
         setQuote(QUOTES[Math.floor(Math.random() * QUOTES.length)]);
     }, [
         mode,
-        playSwitch
+        playSwitch,
+        customMinutes
     ]);
-    // --- ATALHOS DE TECLADO ---
+    // --- ATALHOS ---
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         const handleKeyDown = (e)=>{
-            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+            if (e.target instanceof HTMLInputElement) return;
             if (!isLoaded) return;
             switch(e.code){
                 case 'Space':
-                    if (e.target instanceof HTMLButtonElement) return;
                     e.preventDefault();
                     toggleTimer();
                     break;
                 case 'KeyR':
                     resetTimer();
-                    break;
-                case 'KeyM':
-                    const nextKey = mode === 'focus' ? 'shortBreak' : 'focus';
-                    switchMode(nextKey);
                     break;
                 case 'KeyZ':
                     if (onToggleZen) {
@@ -445,30 +495,27 @@ function TimerCard({ isZenMode = false, onToggleZen }) {
         window.addEventListener('keydown', handleKeyDown);
         return ()=>window.removeEventListener('keydown', handleKeyDown);
     }, [
-        mode,
         toggleTimer,
         resetTimer,
-        switchMode,
         onToggleZen,
         isLoaded,
         playClick,
         togglePiP
     ]);
-    // --- EFEITO DO TIMER ---
+    // --- TIMER LOGIC ---
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         let interval;
         if (isRunning && timeLeft > 0) {
-            interval = setInterval(()=>{
-                setTimeLeft((prev)=>prev - 1);
-            }, 1000);
+            interval = setInterval(()=>setTimeLeft((p)=>p - 1), 1000);
         } else if (timeLeft === 0 && isRunning) {
             setIsRunning(false);
             setIsCompleted(true);
             playDone();
-            setTimeout(()=>setIsCompleted(false), 4000);
-            if (mode === 'focus') {
+            if (mode === 'focus' || mode === 'custom') {
                 registerSession();
+                localStorage.setItem('focus-last-date', new Date().toISOString());
             }
+            setTimeout(()=>setIsCompleted(false), 4000);
         }
         return ()=>clearInterval(interval);
     }, [
@@ -478,10 +525,11 @@ function TimerCard({ isZenMode = false, onToggleZen }) {
         registerSession,
         playDone
     ]);
+    // Title Update
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
-        const minutes = Math.floor(timeLeft / 60);
-        const seconds = timeLeft % 60;
-        const timeStr = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        const m = Math.floor(timeLeft / 60);
+        const s = timeLeft % 60;
+        const timeStr = `${m}:${s < 10 ? '0' : ''}${s}`;
         const icon = isCompleted ? '🎉' : isRunning ? '🟢' : '⏸️';
         document.title = `${icon} ${timeStr} - FOCUS`;
     }, [
@@ -494,9 +542,8 @@ function TimerCard({ isZenMode = false, onToggleZen }) {
         const s = seconds % 60;
         return `${m}:${s < 10 ? '0' : ''}${s}`;
     };
-    const totalTime = MODES[mode].minutes * 60;
     const circumference = 283;
-    const strokeDashoffset = circumference - timeLeft / totalTime * circumference;
+    const strokeDashoffset = circumference - timeLeft / maxTime * circumference;
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].div, {
         layout: true,
         transition: {
@@ -505,39 +552,18 @@ function TimerCard({ isZenMode = false, onToggleZen }) {
                 stiffness: 100,
                 damping: 25
             },
-            duration: 0.8,
-            repeat: isCompleted ? 4 : 0,
-            repeatType: "reverse"
+            duration: 0.8
         },
-        animate: isCompleted ? {
-            boxShadow: [
-                "0 0 0px rgba(0,0,0,0)",
-                `0 0 50px ${MODES[mode].hex}80`,
-                "0 0 0px rgba(0,0,0,0)"
-            ],
-            borderColor: [
-                "rgba(30, 41, 59, 0.6)",
-                MODES[mode].hex,
-                "rgba(30, 41, 59, 0.6)"
-            ]
-        } : {
-            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-            borderColor: "rgba(30, 41, 59, 0.6)"
+        className: `relative h-full flex flex-col justify-between items-center py-8 px-6 sm:px-10 rounded-[40px] bg-slate-950 border overflow-hidden group ${isCompleted ? 'border-' + theme.bg.replace('bg-', '') : 'border-slate-800'}`,
+        style: {
+            borderColor: isCompleted ? MODES[mode].hex : 'rgba(30, 41, 59, 0.6)'
         },
-        className: `
-        relative h-full flex flex-col justify-between items-center py-8 px-6 sm:px-10
-        rounded-[40px]
-        bg-slate-950 
-        border
-        overflow-hidden
-        group
-      `,
         children: [
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                 className: `absolute top-0 left-0 w-full h-2/3 bg-gradient-to-b ${theme.gradient} to-transparent opacity-25 pointer-events-none transition-all duration-1000`
             }, void 0, false, {
                 fileName: "[project]/src/components/TimerCard.tsx",
-                lineNumber: 242,
+                lineNumber: 237,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("canvas", {
@@ -545,7 +571,7 @@ function TimerCard({ isZenMode = false, onToggleZen }) {
                 className: "absolute top-0 left-0 opacity-0 pointer-events-none -z-50"
             }, void 0, false, {
                 fileName: "[project]/src/components/TimerCard.tsx",
-                lineNumber: 247,
+                lineNumber: 238,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("video", {
@@ -556,168 +582,67 @@ function TimerCard({ isZenMode = false, onToggleZen }) {
                 playsInline: true
             }, void 0, false, {
                 fileName: "[project]/src/components/TimerCard.tsx",
-                lineNumber: 248,
+                lineNumber: 239,
                 columnNumber: 7
             }, this),
-            !isLoaded ? // --- SKELETON ---
-            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                className: "w-full h-full flex flex-col justify-between items-center animate-pulse z-20",
-                children: [
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "w-full flex flex-col items-center gap-6 pt-2",
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "flex flex-col items-center gap-3",
-                                children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        className: "h-8 w-40 bg-slate-800/50 rounded-lg"
-                                    }, void 0, false, {
-                                        fileName: "[project]/src/components/TimerCard.tsx",
-                                        lineNumber: 255,
-                                        columnNumber: 16
-                                    }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        className: "h-1 w-12 bg-slate-800/30 rounded-full"
-                                    }, void 0, false, {
-                                        fileName: "[project]/src/components/TimerCard.tsx",
-                                        lineNumber: 256,
-                                        columnNumber: 16
-                                    }, this)
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/src/components/TimerCard.tsx",
-                                lineNumber: 254,
-                                columnNumber: 14
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "h-10 w-full max-w-[280px] bg-slate-800/40 rounded-2xl"
-                            }, void 0, false, {
-                                fileName: "[project]/src/components/TimerCard.tsx",
-                                lineNumber: 258,
-                                columnNumber: 14
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "flex flex-col items-center gap-2 mt-2",
-                                children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        className: "h-3 w-32 bg-slate-800/40 rounded"
-                                    }, void 0, false, {
-                                        fileName: "[project]/src/components/TimerCard.tsx",
-                                        lineNumber: 260,
-                                        columnNumber: 17
-                                    }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        className: "h-2 w-24 bg-slate-800/30 rounded"
-                                    }, void 0, false, {
-                                        fileName: "[project]/src/components/TimerCard.tsx",
-                                        lineNumber: 261,
-                                        columnNumber: 17
-                                    }, this)
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/src/components/TimerCard.tsx",
-                                lineNumber: 259,
-                                columnNumber: 14
-                            }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "[project]/src/components/TimerCard.tsx",
-                        lineNumber: 253,
-                        columnNumber: 11
-                    }, this),
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "relative w-64 h-64 sm:w-72 sm:h-72 rounded-full border-4 border-slate-800/30 flex items-center justify-center",
-                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                            className: "h-20 w-40 bg-slate-800/50 rounded-xl"
-                        }, void 0, false, {
-                            fileName: "[project]/src/components/TimerCard.tsx",
-                            lineNumber: 265,
-                            columnNumber: 14
-                        }, this)
-                    }, void 0, false, {
-                        fileName: "[project]/src/components/TimerCard.tsx",
-                        lineNumber: 264,
-                        columnNumber: 11
-                    }, this),
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "flex flex-col items-center gap-4 pb-4",
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "w-20 h-20 rounded-full bg-slate-800/50"
-                            }, void 0, false, {
-                                fileName: "[project]/src/components/TimerCard.tsx",
-                                lineNumber: 268,
-                                columnNumber: 14
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "h-3 w-16 bg-slate-800/30 rounded"
-                            }, void 0, false, {
-                                fileName: "[project]/src/components/TimerCard.tsx",
-                                lineNumber: 269,
-                                columnNumber: 14
-                            }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "[project]/src/components/TimerCard.tsx",
-                        lineNumber: 267,
-                        columnNumber: 11
-                    }, this)
-                ]
-            }, void 0, true, {
+            !isLoaded ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                className: "animate-pulse w-full h-full flex items-center justify-center",
+                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                    className: "w-10 h-10 bg-slate-800 rounded-full"
+                }, void 0, false, {
+                    fileName: "[project]/src/components/TimerCard.tsx",
+                    lineNumber: 242,
+                    columnNumber: 87
+                }, this)
+            }, void 0, false, {
                 fileName: "[project]/src/components/TimerCard.tsx",
-                lineNumber: 252,
+                lineNumber: 242,
                 columnNumber: 9
-            }, this) : // --- UI REAL ---
-            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Fragment"], {
+            }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Fragment"], {
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                         className: "absolute top-6 right-6 z-20 flex items-center gap-2",
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                                 onClick: togglePiP,
-                                className: `
-                p-2 rounded-full transition-all duration-300 group/pip
-                ${isPiPActive ? 'text-cyan-400 bg-cyan-900/20' : 'text-slate-600 hover:text-slate-300 hover:bg-white/5'}
-              `,
-                                title: isPiPActive ? "Fechar Mini Player (P)" : "Abrir Mini Player (P)",
+                                className: `p-2 rounded-full transition-all ${isPiPActive ? 'text-cyan-400 bg-cyan-900/20' : 'text-slate-600 hover:text-slate-300'}`,
                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$picture$2d$in$2d$picture$2d$2$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__PictureInPicture2$3e$__["PictureInPicture2"], {
-                                    className: `w-5 h-5 ${isPiPActive ? 'opacity-100' : 'opacity-50 group-hover/pip:opacity-100'}`
+                                    className: "w-5 h-5"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/TimerCard.tsx",
-                                    lineNumber: 288,
+                                    lineNumber: 248,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/components/TimerCard.tsx",
-                                lineNumber: 278,
+                                lineNumber: 247,
                                 columnNumber: 13
                             }, this),
                             onToggleZen && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                                 onClick: onToggleZen,
-                                className: "p-2 rounded-full text-slate-600 hover:text-slate-300 hover:bg-white/5 transition-all duration-300 group/zen",
-                                title: "Modo Zen (Atalho: Z)",
+                                className: "p-2 rounded-full text-slate-600 hover:text-slate-300",
                                 children: isZenMode ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$minimize$2d$2$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Minimize2$3e$__["Minimize2"], {
-                                    className: "w-5 h-5 opacity-50 group-hover/zen:opacity-100"
+                                    className: "w-5 h-5"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/TimerCard.tsx",
-                                    lineNumber: 298,
-                                    columnNumber: 19
+                                    lineNumber: 252,
+                                    columnNumber: 30
                                 }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$maximize$2d$2$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Maximize2$3e$__["Maximize2"], {
-                                    className: "w-5 h-5 opacity-50 group-hover/zen:opacity-100"
+                                    className: "w-5 h-5"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/TimerCard.tsx",
-                                    lineNumber: 300,
-                                    columnNumber: 19
+                                    lineNumber: 252,
+                                    columnNumber: 65
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/components/TimerCard.tsx",
-                                lineNumber: 292,
+                                lineNumber: 251,
                                 columnNumber: 15
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/TimerCard.tsx",
-                        lineNumber: 276,
+                        lineNumber: 246,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -727,24 +652,24 @@ function TimerCard({ isZenMode = false, onToggleZen }) {
                                 className: "flex flex-col items-center gap-3",
                                 children: [
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
-                                        className: "text-3xl sm:text-4xl font-extrabold tracking-[0.3em] text-transparent bg-clip-text bg-gradient-to-br from-slate-200 to-slate-500 uppercase select-none pl-2 transition-all duration-500",
+                                        className: "text-3xl sm:text-4xl font-extrabold tracking-[0.3em] text-transparent bg-clip-text bg-gradient-to-br from-slate-200 to-slate-500 uppercase select-none pl-2",
                                         children: "FOCUS"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/TimerCard.tsx",
-                                        lineNumber: 308,
+                                        lineNumber: 260,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                         className: `w-12 h-0.5 rounded-full transition-colors duration-700 ${isRunning ? theme.bg : 'bg-slate-800'}`
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/TimerCard.tsx",
-                                        lineNumber: 311,
+                                        lineNumber: 263,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/TimerCard.tsx",
-                                lineNumber: 307,
+                                lineNumber: 259,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -755,79 +680,118 @@ function TimerCard({ isZenMode = false, onToggleZen }) {
                     px-4 py-2 rounded-xl text-[10px] sm:text-[11px] font-bold uppercase tracking-wide transition-all duration-300 whitespace-nowrap
                     ${mode === m ? `${theme.bg} text-white shadow-lg scale-100` : 'text-slate-500 hover:text-slate-300 hover:bg-white/5 scale-95'}
                   `,
-                                        title: m === 'focus' ? 'Atalho: M' : '',
                                         children: MODES[m].label
                                     }, m, false, {
                                         fileName: "[project]/src/components/TimerCard.tsx",
-                                        lineNumber: 316,
+                                        lineNumber: 269,
                                         columnNumber: 17
                                     }, this))
                             }, void 0, false, {
                                 fileName: "[project]/src/components/TimerCard.tsx",
-                                lineNumber: 314,
+                                lineNumber: 267,
                                 columnNumber: 13
                             }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "flex flex-col items-center gap-1",
-                                children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                        className: "text-[10px] font-bold tracking-wider uppercase text-slate-200 drop-shadow-sm",
-                                        children: [
-                                            "Sessão Atual: ",
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                className: `transition-colors duration-300 ${theme.text}`,
-                                                children: [
-                                                    MODES[mode].label,
-                                                    " · ",
-                                                    MODES[mode].minutes,
-                                                    " min"
-                                                ]
-                                            }, void 0, true, {
-                                                fileName: "[project]/src/components/TimerCard.tsx",
-                                                lineNumber: 334,
-                                                columnNumber: 31
-                                            }, this)
-                                        ]
-                                    }, void 0, true, {
-                                        fileName: "[project]/src/components/TimerCard.tsx",
-                                        lineNumber: 333,
-                                        columnNumber: 15
-                                    }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                        className: "text-[9px] font-semibold tracking-wider uppercase text-slate-500",
-                                        children: [
-                                            "Próximo: ",
-                                            nextMode.label,
-                                            " · ",
-                                            nextMode.minutes,
-                                            " min"
-                                        ]
-                                    }, void 0, true, {
-                                        fileName: "[project]/src/components/TimerCard.tsx",
-                                        lineNumber: 336,
-                                        columnNumber: 15
-                                    }, this)
-                                ]
-                            }, void 0, true, {
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$components$2f$AnimatePresence$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AnimatePresence"], {
+                                children: mode === 'custom' && !isRunning && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].div, {
+                                    initial: {
+                                        opacity: 0,
+                                        height: 0
+                                    },
+                                    animate: {
+                                        opacity: 1,
+                                        height: 'auto'
+                                    },
+                                    exit: {
+                                        opacity: 0,
+                                        height: 0
+                                    },
+                                    className: "flex flex-col items-center gap-2 w-full max-w-[200px]",
+                                    children: [
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                            className: "flex items-center gap-2 text-amber-500/80 text-[10px] font-bold uppercase tracking-wider",
+                                            children: [
+                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$sliders$2d$horizontal$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__SlidersHorizontal$3e$__["SlidersHorizontal"], {
+                                                    className: "w-3 h-3"
+                                                }, void 0, false, {
+                                                    fileName: "[project]/src/components/TimerCard.tsx",
+                                                    lineNumber: 292,
+                                                    columnNumber: 21
+                                                }, this),
+                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                    children: [
+                                                        "Ajustar Tempo: ",
+                                                        customMinutes,
+                                                        " min"
+                                                    ]
+                                                }, void 0, true, {
+                                                    fileName: "[project]/src/components/TimerCard.tsx",
+                                                    lineNumber: 293,
+                                                    columnNumber: 21
+                                                }, this)
+                                            ]
+                                        }, void 0, true, {
+                                            fileName: "[project]/src/components/TimerCard.tsx",
+                                            lineNumber: 291,
+                                            columnNumber: 19
+                                        }, this),
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
+                                            type: "range",
+                                            min: "1",
+                                            max: "120",
+                                            value: customMinutes,
+                                            onChange: handleCustomTimeChange,
+                                            className: "w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500 hover:accent-amber-400 transition-all"
+                                        }, void 0, false, {
+                                            fileName: "[project]/src/components/TimerCard.tsx",
+                                            lineNumber: 295,
+                                            columnNumber: 19
+                                        }, this)
+                                    ]
+                                }, void 0, true, {
+                                    fileName: "[project]/src/components/TimerCard.tsx",
+                                    lineNumber: 285,
+                                    columnNumber: 17
+                                }, this)
+                            }, void 0, false, {
                                 fileName: "[project]/src/components/TimerCard.tsx",
-                                lineNumber: 332,
+                                lineNumber: 283,
                                 columnNumber: 13
+                            }, this),
+                            !isRunning && mode !== 'custom' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                className: "flex flex-col items-center gap-1",
+                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                    className: "text-[10px] font-bold tracking-wider uppercase text-slate-200",
+                                    children: [
+                                        "Sessão: ",
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                            className: theme.text,
+                                            children: MODES[mode].label
+                                        }, void 0, false, {
+                                            fileName: "[project]/src/components/TimerCard.tsx",
+                                            lineNumber: 310,
+                                            columnNumber: 28
+                                        }, this)
+                                    ]
+                                }, void 0, true, {
+                                    fileName: "[project]/src/components/TimerCard.tsx",
+                                    lineNumber: 309,
+                                    columnNumber: 18
+                                }, this)
+                            }, void 0, false, {
+                                fileName: "[project]/src/components/TimerCard.tsx",
+                                lineNumber: 308,
+                                columnNumber: 16
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/TimerCard.tsx",
-                        lineNumber: 306,
+                        lineNumber: 258,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                         className: "flex-1 flex items-center justify-center w-full relative py-4",
                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                            className: `
-              relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center rounded-full 
-              transition-all duration-1000
-              ${isRunning ? `animate-breathing-glow ${theme.glow}` : ''}
-              ${isCompleted ? 'scale-110' : ''}
-            `,
+                            className: `relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center rounded-full transition-all duration-1000 ${isRunning ? `animate-breathing-glow ${theme.glow}` : ''} ${isCompleted ? 'scale-110' : ''}`,
                             children: [
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("svg", {
                                     className: "w-full h-full absolute transform -rotate-90 drop-shadow-2xl",
@@ -843,7 +807,7 @@ function TimerCard({ isZenMode = false, onToggleZen }) {
                                             className: "text-slate-800/60"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/TimerCard.tsx",
-                                            lineNumber: 350,
+                                            lineNumber: 320,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("circle", {
@@ -859,13 +823,13 @@ function TimerCard({ isZenMode = false, onToggleZen }) {
                                             className: `transition-all duration-1000 ease-linear ${theme.ring}`
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/TimerCard.tsx",
-                                            lineNumber: 351,
+                                            lineNumber: 321,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/TimerCard.tsx",
-                                    lineNumber: 349,
+                                    lineNumber: 319,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -876,51 +840,47 @@ function TimerCard({ isZenMode = false, onToggleZen }) {
                                             children: formatTime(timeLeft)
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/TimerCard.tsx",
-                                            lineNumber: 364,
+                                            lineNumber: 329,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                             className: `text-[10px] font-bold tracking-[0.2em] uppercase mt-2 opacity-80 transition-colors duration-500 ${theme.text}`,
-                                            children: isCompleted ? 'CONCLUÍDO' : isRunning ? 'Em andamento' : 'Pausado'
+                                            children: isCompleted ? 'CONCLUÍDO' : isRunning ? 'EM ANDAMENTO' : mode === 'custom' ? 'PERSONALIZADO' : 'PAUSADO'
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/TimerCard.tsx",
-                                            lineNumber: 367,
+                                            lineNumber: 332,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/TimerCard.tsx",
-                                    lineNumber: 363,
+                                    lineNumber: 328,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/TimerCard.tsx",
-                            lineNumber: 343,
+                            lineNumber: 318,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/components/TimerCard.tsx",
-                        lineNumber: 342,
+                        lineNumber: 317,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: `
-            z-10 mt-2 mb-4 w-full px-8 text-center shrink-0
-            transition-all duration-1000 ease-in-out
-            ${isRunning || isCompleted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}
-          `,
+                        className: `z-10 mt-2 mb-4 w-full px-8 text-center shrink-0 transition-all duration-1000 ${isRunning || isCompleted ? 'opacity-100' : 'opacity-0 -translate-y-4'}`,
                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                             className: "text-[11px] text-slate-400 font-medium tracking-wider leading-relaxed select-none",
                             children: quote
                         }, void 0, false, {
                             fileName: "[project]/src/components/TimerCard.tsx",
-                            lineNumber: 379,
+                            lineNumber: 341,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/components/TimerCard.tsx",
-                        lineNumber: 374,
+                        lineNumber: 340,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -928,44 +888,21 @@ function TimerCard({ isZenMode = false, onToggleZen }) {
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                                 onClick: toggleTimer,
-                                className: `
-                w-20 h-20 rounded-full 
-                flex items-center justify-center
-                text-white shadow-2xl 
-                transition-all duration-300 ease-out
-                hover:scale-110 active:scale-95
-                ${theme.bg}
-                ring-4 ring-slate-950 ring-offset-2 ring-offset-slate-900/50
-              `,
-                                title: isRunning ? "Pausar (Espaço)" : "Iniciar (Espaço)",
-                                children: isCompleted ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("svg", {
-                                    className: "w-8 h-8 fill-current ml-1",
-                                    viewBox: "0 0 24 24",
-                                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("path", {
-                                        d: "M8 5v14l11-7z"
-                                    }, void 0, false, {
-                                        fileName: "[project]/src/components/TimerCard.tsx",
-                                        lineNumber: 399,
-                                        columnNumber: 81
-                                    }, this)
-                                }, void 0, false, {
-                                    fileName: "[project]/src/components/TimerCard.tsx",
-                                    lineNumber: 399,
-                                    columnNumber: 18
-                                }, this) : isRunning ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("svg", {
+                                className: `w-20 h-20 rounded-full flex items-center justify-center text-white shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95 ${theme.bg} ring-4 ring-slate-950 ring-offset-2 ring-offset-slate-900/50`,
+                                children: isRunning ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("svg", {
                                     className: "w-8 h-8 fill-current",
                                     viewBox: "0 0 24 24",
                                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("path", {
                                         d: "M6 19h4V5H6v14zm8-14v14h4V5h-4z"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/TimerCard.tsx",
-                                        lineNumber: 402,
-                                        columnNumber: 77
+                                        lineNumber: 351,
+                                        columnNumber: 75
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/TimerCard.tsx",
-                                    lineNumber: 402,
-                                    columnNumber: 19
+                                    lineNumber: 351,
+                                    columnNumber: 17
                                 }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("svg", {
                                     className: "w-8 h-8 fill-current ml-1",
                                     viewBox: "0 0 24 24",
@@ -973,17 +910,17 @@ function TimerCard({ isZenMode = false, onToggleZen }) {
                                         d: "M8 5v14l11-7z"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/TimerCard.tsx",
-                                        lineNumber: 404,
-                                        columnNumber: 82
+                                        lineNumber: 353,
+                                        columnNumber: 80
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/TimerCard.tsx",
-                                    lineNumber: 404,
-                                    columnNumber: 19
+                                    lineNumber: 353,
+                                    columnNumber: 17
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/components/TimerCard.tsx",
-                                lineNumber: 385,
+                                lineNumber: 346,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -993,13 +930,13 @@ function TimerCard({ isZenMode = false, onToggleZen }) {
                                 children: "Reiniciar"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/TimerCard.tsx",
-                                lineNumber: 409,
+                                lineNumber: 356,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/TimerCard.tsx",
-                        lineNumber: 384,
+                        lineNumber: 345,
                         columnNumber: 11
                     }, this)
                 ]
@@ -1007,7 +944,7 @@ function TimerCard({ isZenMode = false, onToggleZen }) {
         ]
     }, void 0, true, {
         fileName: "[project]/src/components/TimerCard.tsx",
-        lineNumber: 209,
+        lineNumber: 230,
         columnNumber: 5
     }, this);
 }
@@ -1015,13 +952,13 @@ function TimerCard({ isZenMode = false, onToggleZen }) {
 "[project]/src/hooks/useThemeColors.ts [app-ssr] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
-// Exemplo: Assumindo que você tem um hook que retorna o estado do timer
-// import { useTimerState } from '@/store/timerStore';
-// Tipos para os modos (ajuste conforme seu código real)
 __turbopack_context__.s([
     "useThemeColors",
     ()=>useThemeColors
 ]);
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react.js [app-ssr] (ecmascript)");
+'use client';
+;
 const themes = {
     focus: {
         accent: 'text-cyan-400',
@@ -1048,16 +985,71 @@ const themes = {
         ringColor: 'text-violet-600'
     }
 };
+const STORAGE_KEYS = {
+    mode: 'focus_timer_mode',
+    time: 'focus_timer_time'
+};
+const isTimerMode = (v)=>v === 'focus' || v === 'shortBreak' || v === 'longBreak';
 function useThemeColors() {
-    // SUBSTITUA PELO SEU ESTADO REAL:
-    // const { mode, isRunning } = useTimerState();
-    // --- Mock para exemplo ---
-    const mode = 'focus'; // Tente mudar para 'shortBreak' ou 'longBreak' para testar
-    const isRunning = true; // Tente mudar para false para testar a pausa da animação
-    // -------------------------
+    const [mode, setMode] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])('focus');
+    const [isRunning, setIsRunning] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
+    // Detecta "rodando" observando se o tempo salvo muda a cada segundo.
+    // (Isso evita mexer no core do TimerCard e ainda dá um estado útil pra UI.)
+    const lastTimeRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])(null);
+    const stableTicksRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])(0);
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
+        const readMode = ()=>{
+            const saved = localStorage.getItem(STORAGE_KEYS.mode);
+            if (isTimerMode(saved)) setMode(saved);
+        };
+        const pollRunning = ()=>{
+            const rawTime = localStorage.getItem(STORAGE_KEYS.time);
+            const parsed = rawTime ? Number.parseInt(rawTime, 10) : Number.NaN;
+            if (!Number.isFinite(parsed)) {
+                stableTicksRef.current += 1;
+                if (stableTicksRef.current >= 2) setIsRunning(false);
+                return;
+            }
+            const last = lastTimeRef.current;
+            if (last === null) {
+                lastTimeRef.current = parsed;
+                stableTicksRef.current = 0;
+                setIsRunning(false);
+                return;
+            }
+            if (parsed !== last) {
+                lastTimeRef.current = parsed;
+                stableTicksRef.current = 0;
+                setIsRunning(true);
+                return;
+            }
+            stableTicksRef.current += 1;
+            if (stableTicksRef.current >= 2) setIsRunning(false);
+        };
+        // Inicial
+        readMode();
+        pollRunning();
+        // Poll leve (1s) para sincronizar UI no mesmo tab
+        const intervalId = window.setInterval(pollRunning, 1000);
+        // Mudança de localStorage (outros tabs/janelas)
+        const onStorage = (e)=>{
+            if (e.key === STORAGE_KEYS.mode) readMode();
+        };
+        // Re-sincroniza ao voltar pro tab
+        const onFocus = ()=>{
+            readMode();
+            pollRunning();
+        };
+        window.addEventListener('storage', onStorage);
+        window.addEventListener('focus', onFocus);
+        return ()=>{
+            window.clearInterval(intervalId);
+            window.removeEventListener('storage', onStorage);
+            window.removeEventListener('focus', onFocus);
+        };
+    }, []);
     const currentTheme = themes[mode];
-    // Classe utilitária para o efeito de respiração
-    const breathingAnimationClass = ("TURBOPACK compile-time truthy", 1) ? `animate-breathing-glow ${currentTheme.glowColor}` : "TURBOPACK unreachable";
+    const breathingAnimationClass = isRunning ? `animate-breathing-glow ${currentTheme.glowColor}` : '';
     return {
         mode,
         isRunning,

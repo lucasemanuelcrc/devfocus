@@ -10,8 +10,9 @@
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(to bottom, transparent, rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
+  background: transparent;
 }
+
 @layer utilities {
   /* Scrollbar Elegante FOCUS */
   .scrollbar-focus::-webkit-scrollbar {
@@ -32,7 +33,7 @@ body {
     background: #475569; /* slate-600 */
   }
 
-  /* Suporte para Firefox (Opcional, mas recomendado) */
+  /* Suporte para Firefox */
   .scrollbar-focus {
     scrollbar-width: thin;
     scrollbar-color: #334155 transparent;
