@@ -1,36 +1,28 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DevFocus
 
-## Getting Started
+Aplicação feita em **Next.js** com suporte a **Desktop (Electron)**.  
+No desktop, em **desenvolvimento** o app abre `http://localhost:3000` e, em **produção**, abre a URL publicada na Vercel: **https://devfocus-seven.vercel.app/**.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Tecnologias
+- Next.js (App Router)
+- Tailwind CSS
+- Electron (desktop)
+- electron-builder (geração de instaladores)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Estrutura do projeto
+- `focus/` → aplicação Next.js + Electron
+  - `electron/` → arquivos do desktop (main/preload)
+  - `src/` → código do Next.js
+  - `src/app/` → App Router
+  - `src/components/` → componentes (ex.: titlebar do Electron)
+  - `src/app/globals.css` → estilos globais
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Requisitos
+- Node.js 18+
+- npm
