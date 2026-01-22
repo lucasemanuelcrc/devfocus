@@ -8,7 +8,9 @@
     "build": "next build",
     "start": "next start",
     "electron:dev": "concurrently -k \"cross-env NEXT_PUBLIC_RUNTIME=electron next dev\" \"wait-on http://localhost:3000 && cross-env ELECTRON_START_URL=http://localhost:3000 electron .\"",
-    "electron:preview": "cross-env NEXT_PUBLIC_RUNTIME=electron next build && concurrently -k \"cross-env NEXT_PUBLIC_RUNTIME=electron next start -p 3000\" \"wait-on http://localhost:3000 && cross-env ELECTRON_START_URL=http://localhost:3000 electron .\""
+    "electron:preview": "cross-env NEXT_PUBLIC_RUNTIME=electron next build && concurrently -k \"cross-env NEXT_PUBLIC_RUNTIME=electron next start -p 3000\" \"wait-on http://localhost:3000 && cross-env ELECTRON_START_URL=http://localhost:3000 electron .\"",
+    "desktop:prep": "next build && cpy \".next/static/**\" \".next/standalone/.next/static\" --parents && cpy \"public/**\" \".next/standalone/public\" --parents",
+    "desktop:dist": "cross-env NEXT_PUBLIC_RUNTIME=electron npm run desktop:prep && electron-builder"
   },
   "dependencies": {
     "framer-motion": "^12.23.26",
@@ -28,7 +30,37 @@
     "electron": "^29.0.0",
     "concurrently": "^9.0.0",
     "wait-on": "^7.2.0",
-    "cross-env": "^7.0.3"
+    "cross-env": "^7.0.3",
+    "electron-builder": "^24.13.3",
+    "cpy-cli": "^5.0.0"
   },
-  "main": "electron/main.js"
+  "main": "electron/main.js",
+  "build": {
+    "appId": "com.seuapp.devfocus",
+    "productName": "DevFocus",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      ".next/standalone/**/*",
+      "package.json"
+    ],
+    "asar": false,
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ]
+    }
+  }
 }

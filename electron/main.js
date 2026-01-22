@@ -1,94 +1,32 @@
-const { app, BrowserWindow, Menu, shell, Tray, ipcMain } = require("electron");
+// focus/electron/main.js
+const { app, BrowserWindow, Menu, globalShortcut, ipcMain, shell } = require("electron");
 const path = require("path");
-const fs = require("fs");
 
 const isDev = !app.isPackaged;
 
-/**
- * In dev we load Next.js from localhost.
- * In preview/prod you can set ELECTRON_START_URL.
- */
-const DEFAULT_DEV_URL = "http://localhost:3000";
-const DEFAULT_PROD_URL = "http://localhost:3000";
-
-// ---- Single instance (avoid opening twice) ---------------------------------
-const gotLock = app.requestSingleInstanceLock();
-if (!gotLock) {
-  app.quit();
-}
-
 let mainWindow;
-let tray;
 
-// ---- Simple window state persistence (no extra deps) -----------------------
-const stateFile = path.join(app.getPath("userData"), "window-state.json");
-function readWindowState() {
-  try {
-    const raw = fs.readFileSync(stateFile, "utf8");
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
+const APP_URL_PROD = "https://devfocus-seven.vercel.app";
+const APP_URL_DEV = "http://localhost:3000";
 
-function saveWindowState(win) {
-  try {
-    const bounds = win.getBounds();
-    const state = {
-      bounds,
-      isMaximized: win.isMaximized(),
-      isFullScreen: win.isFullScreen(),
-    };
-    fs.writeFileSync(stateFile, JSON.stringify(state));
-  } catch {
-    // ignore
-  }
-}
+const allowedOrigins = new Set([
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  "https://devfocus-seven.vercel.app",
+]);
 
-function getStartUrl() {
-  return (
-    process.env.ELECTRON_START_URL ||
-    (isDev ? DEFAULT_DEV_URL : DEFAULT_PROD_URL)
-  );
-}
-
-function isExternalUrl(url, base) {
-  try {
-    const u = new URL(url);
-    const b = new URL(base);
-    return u.origin !== b.origin;
-  } catch {
-    return false;
-  }
-}
-
-function broadcastWindowState() {
+function toggleFullScreen() {
   if (!mainWindow) return;
-  mainWindow.webContents.send("window:state-changed", {
-    isMaximized: mainWindow.isMaximized(),
-    isFullScreen: mainWindow.isFullScreen(),
-  });
+  mainWindow.setFullScreen(!mainWindow.isFullScreen());
 }
 
 function createWindow() {
-  const startUrl = getStartUrl();
-  const saved = readWindowState();
-
   mainWindow = new BrowserWindow({
-    width: saved?.bounds?.width ?? 1280,
-    height: saved?.bounds?.height ?? 800,
-    x: saved?.bounds?.x,
-    y: saved?.bounds?.y,
+    width: 1280,
+    height: 800,
     show: false,
-    backgroundColor: "#0b0b0b",
-
-    // Custom titlebar (app-like feel)
-    frame: false,
-    titleBarStyle: process.platform === "darwin" ? "hidden" : undefined,
-
     autoHideMenuBar: true,
     fullscreenable: true,
-
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -96,141 +34,72 @@ function createWindow() {
     },
   });
 
-  // Remove application menu completely
+  // Remove menu por completo
   Menu.setApplicationMenu(null);
   mainWindow.setMenuBarVisibility(false);
   mainWindow.removeMenu();
 
+  // Abre o app (DEV = localhost, PROD = Vercel)
+  const startUrl = isDev ? APP_URL_DEV : APP_URL_PROD;
   mainWindow.loadURL(startUrl);
 
-  // Restore maximize/fullscreen state after ready
   mainWindow.once("ready-to-show", () => {
-    if (saved?.isMaximized) mainWindow.maximize();
+    mainWindow.maximize();
     mainWindow.show();
-    // Fullscreen is opt-in; restore only if it was fullscreen last time
-    if (saved?.isFullScreen) mainWindow.setFullScreen(true);
-    broadcastWindowState();
   });
 
-  // Open external links in default browser
+  // Segurança: abre links externos no navegador padrão
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
+    try {
+      const origin = new URL(url).origin;
+      if (!allowedOrigins.has(origin)) shell.openExternal(url);
+    } catch {
+      shell.openExternal(url);
+    }
     return { action: "deny" };
   });
 
-  // Prevent navigation away from the app origin
   mainWindow.webContents.on("will-navigate", (event, url) => {
-    if (isExternalUrl(url, startUrl)) {
+    try {
+      const origin = new URL(url).origin;
+      if (!allowedOrigins.has(origin)) {
+        event.preventDefault();
+        shell.openExternal(url);
+      }
+    } catch {
       event.preventDefault();
       shell.openExternal(url);
     }
   });
 
-  // Persist window state
-  const persist = () => saveWindowState(mainWindow);
-  mainWindow.on("close", persist);
-  mainWindow.on("resize", () => {
-    if (!mainWindow.isMaximized() && !mainWindow.isFullScreen()) persist();
-  });
-  mainWindow.on("move", () => {
-    if (!mainWindow.isMaximized() && !mainWindow.isFullScreen()) persist();
-  });
-
-  // Broadcast state changes to renderer UI (for button icons)
-  mainWindow.on("maximize", broadcastWindowState);
-  mainWindow.on("unmaximize", broadcastWindowState);
-  mainWindow.on("enter-full-screen", broadcastWindowState);
-  mainWindow.on("leave-full-screen", broadcastWindowState);
-
-  if (isDev) mainWindow.webContents.openDevTools({ mode: "detach" });
+  if (isDev) mainWindow.webContents.openDevTools();
 }
 
-function createTray() {
-  // Small tray menu for "real app" feel (optional, lightweight)
-  try {
-    const iconPath = path.join(__dirname, "assets", "app.png");
-    tray = new Tray(iconPath);
-    tray.setToolTip("FOCUS");
-
-    tray.on("click", () => {
-      if (!mainWindow) return;
-      if (mainWindow.isVisible()) mainWindow.hide();
-      else {
-        mainWindow.show();
-        mainWindow.focus();
-      }
-    });
-
-    const { Menu: ElectronMenu } = require("electron");
-    const ctx = ElectronMenu.buildFromTemplate([
-      {
-        label: "Mostrar/Ocultar",
-        click: () => {
-          if (!mainWindow) return;
-          if (mainWindow.isVisible()) mainWindow.hide();
-          else {
-            mainWindow.show();
-            mainWindow.focus();
-          }
-        },
-      },
-      {
-        label: "Alternar Fullscreen",
-        click: () => {
-          if (!mainWindow) return;
-          mainWindow.setFullScreen(!mainWindow.isFullScreen());
-        },
-      },
-      { type: "separator" },
-      {
-        label: "Sair",
-        click: () => app.quit(),
-      },
-    ]);
-
-    tray.setContextMenu(ctx);
-  } catch {
-    // ignore tray errors (e.g., missing icon in some environments)
-  }
-}
-
-// ---- IPC (window controls from renderer) -----------------------------------
-ipcMain.handle("window:minimize", () => mainWindow?.minimize());
-ipcMain.handle("window:toggle-maximize", () => {
-  if (!mainWindow) return;
-  if (mainWindow.isMaximized()) mainWindow.unmaximize();
-  else mainWindow.maximize();
-  broadcastWindowState();
-});
-ipcMain.handle("window:close", () => mainWindow?.close());
-ipcMain.handle("window:toggle-fullscreen", () => {
-  if (!mainWindow) return;
-  mainWindow.setFullScreen(!mainWindow.isFullScreen());
-  broadcastWindowState();
-});
-ipcMain.handle("window:get-state", () => ({
-  isMaximized: !!mainWindow?.isMaximized(),
-  isFullScreen: !!mainWindow?.isFullScreen(),
-}));
-
-// ---- App lifecycle ---------------------------------------------------------
 app.whenReady().then(() => {
   createWindow();
-  createTray();
 
-  app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-  });
+  // Atalhos
+  globalShortcut.register("F11", () => toggleFullScreen());
+  globalShortcut.register("CommandOrControl+Shift+F", () => toggleFullScreen());
 });
 
-app.on("second-instance", () => {
-  // Someone tried to run a second instance; focus the existing window.
-  if (!mainWindow) return;
-  if (mainWindow.isMinimized()) mainWindow.restore();
-  mainWindow.show();
-  mainWindow.focus();
+app.on("will-quit", () => {
+  globalShortcut.unregisterAll();
 });
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
+
+app.on("activate", () => {
+  if (BrowserWindow.getAllWindows().length === 0) createWindow();
+});
+
+// IPC: permite controlar janela pelo Next (botões)
+ipcMain.handle("window:toggle-fullscreen", () => toggleFullScreen());
+ipcMain.handle("window:minimize", () => mainWindow?.minimize());
+ipcMain.handle("window:maximize", () => {
+  if (!mainWindow) return;
+  mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize();
+});
+ipcMain.handle("window:close", () => mainWindow?.close());
